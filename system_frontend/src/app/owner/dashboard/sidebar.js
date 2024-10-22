@@ -95,10 +95,12 @@ export default function SidebarOwner() {
     };
 
     const getInitials = (name) => {
-        const nameArray = name.split(' ');
+        if (!name) return 'JD'; // Return default initials if name is undefined or empty
+        const nameArray = name.split(' '); // Assuming you want to split by spaces
         const initials = nameArray.map(n => n[0]).join('');
         return initials || 'JD';
     };
+    
 
     return (
         <div className="flex flex-col h-screen w-64 bg-gray-800 text-white p-4">

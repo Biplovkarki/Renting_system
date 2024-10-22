@@ -1,10 +1,9 @@
 "use client";
-
 import Image from "next/image";
 import logo from "../../../../public/logo.png";
 import Link from "next/link";
-import LoginForm from "./Form";
-import FormOwner from "./Form";
+import FormAdmin from "./adminForm";
+
 
 export default function LoginOwner() {
     return (
@@ -16,12 +15,11 @@ export default function LoginOwner() {
                     width={100}
                     height={100}
                 />
-                <h1 className="text-2xl font-bold mt-2 mb-6">Owner Login</h1> {/* Added title for context */}
-              <FormOwner/>
+                <h1 className="text-2xl font-bold mt-2 mb-6">admin Login</h1> {/* Added title for context */}
+                <FormAdmin/>
             </div>
             <div className="text-center">
-            <h1 className="mt-4">Are you a member of Easy Rent Nepal? <Link href="/owner/registerOwner" className="text-blue-500 hover:underline">Register here</Link></h1>
-            <h1 className="mt-4">Are you a user ? <Link href="/login/loginUser" className="text-blue-500 hover:underline">User Login</Link></h1>
+            <h1 className="mt-4">Are you a admin? <Link href="/admin/registerAdmin" className="text-blue-500 hover:underline">Register here</Link></h1>
             </div>
         </div>
     );
