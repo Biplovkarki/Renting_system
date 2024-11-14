@@ -166,7 +166,7 @@ const RegisterOwner = () => {
     }
 
     try {
-      const response = await axios.post('http://localhost:5000/owners/register', {
+      const response = await axios.post('http://localhost:5000/user/register', {
         ownername: username, // Use username instead of ownername
         email,
         password,

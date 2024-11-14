@@ -30,7 +30,7 @@ export default function SidebarAdmin() {
                         <Link href="/admin/dashboard/users" className="block p-2 hover:bg-gray-700 rounded">Users</Link>
                     </li>
                     <li>
-                        <Link href="/admin/dashboard/owners" className="block p-2 hover:bg-gray-700 rounded">Owners</Link>
+                        <Link href="/admin/dashboard/owner" className="block p-2 hover:bg-gray-700 rounded">Owners</Link>
                     </li>
                     <li>
                         <Link href="/admin/dashboard/vehicles" className="block p-2 hover:bg-gray-700 rounded">Vehicles</Link>

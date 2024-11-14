@@ -31,7 +31,7 @@ export default function Navbar() {
           <Link href="/homeComponent/Services" className={`${isActive("/homeComponent/Services")} text-lg`}>
             Services
           </Link>
-          <Link href="/homeComponent/vehicle" className={`${isActive("/homeComponent/vehicle")} text-lg`}>
+          <Link href="/vehicles" className={`${isActive("/homeComponent/vehicle")} text-lg`}>
             Vehicles
           </Link>
         </div>
@@ -40,7 +40,7 @@ export default function Navbar() {
       {/* Desktop Right Section */}
       <section className="hidden md:flex flex-row gap-4 mx-1 items-center">
         
-        <Link href="/login/loginUser">
+        <Link href="/user/loginuser">
           <button className="border-2 w-20 h-14 bg-black text-white rounded-xl hover:bg-green-500">
             Login
           </button>

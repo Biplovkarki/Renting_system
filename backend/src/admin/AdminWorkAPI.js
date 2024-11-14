@@ -2,6 +2,7 @@ import express from 'express';
 import { verifyJwtAdmin } from './jwtAdmin.js';
 import dotenv from 'dotenv';
 import { db } from '../db.js';
+import { verifyJwt } from '../owner/jwtOwner.js';
 
 dotenv.config();
 const AdminAPI = express.Router();

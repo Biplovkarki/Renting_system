@@ -29,7 +29,7 @@ export default function NavbarOwner() {
                     const data = await response.json();
                     setOwnerName(data.ownername); // Adjust this according to your API response structure
                 } catch (error) {
-                    console.error('Error fetching profile:', error);
+                   
                     setError('Unable to load profile. Please log in again.');
                     // Optionally, you could redirect to login if there's an error fetching the profile
                     // router.push('/owner/login');

@@ -24,7 +24,6 @@ export default function PriceList() {
             setPrices(response.data);
             setError("");
         } catch (err) {
-            console.error("Error fetching prices:", err);
             handleError(err);
             setPrices([]);
         } finally {

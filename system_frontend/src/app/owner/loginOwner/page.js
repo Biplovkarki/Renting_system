@@ -21,7 +21,7 @@ export default function LoginOwner() {
             </div>
             <div className="text-center">
             <h1 className="mt-4">Are you a member of Easy Rent Nepal? <Link href="/owner/registerOwner" className="text-blue-500 hover:underline">Register here</Link></h1>
-            <h1 className="mt-4">Are you a user ? <Link href="/login/loginUser" className="text-blue-500 hover:underline">User Login</Link></h1>
+            <h1 className="mt-4">Are you a user ? <Link href="/user/loginuser" className="text-blue-500 hover:underline">User Login</Link></h1>
             </div>
         </div>
     );

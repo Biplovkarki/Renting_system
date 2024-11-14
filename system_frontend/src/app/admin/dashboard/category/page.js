@@ -50,7 +50,7 @@ export default function Category() {
 
     return (
         <div className='flex flex-col'>
-            <h1 className='text-2xl font-bold'>Category</h1>
+            <h1 className='text-2xl font-bold'>Category Management</h1>
             <div className='flex mb-2 mt-3'>
                 <button
                     onClick={() => setIsModalOpen(true)}
