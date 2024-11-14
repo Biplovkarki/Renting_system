@@ -2,7 +2,7 @@ import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { db } from '../db.js';
-import { verifyJwt, blacklistToken } from './jwtUser.js'; // Ensure correct JWT import for users
+import { verifyJwt, blacklistToken } from './jwtUser.js'; // JWT functions for user verification
 import dotenv from 'dotenv';
 import multer from 'multer';
 import path from 'path';
@@ -37,6 +37,7 @@ routerUser.post('/uploaduser', verifyJwt, upload.single('UserImage'), (req, res)
 
     db.query(sql, [image, ownerId], (err) => {
         if (err) {
+            console.error("Error updating the image:", err);
             return res.status(500).json({ message: "Error updating the image" });
         }
         return res.json({ status: "Success", image });
@@ -68,6 +69,7 @@ routerUser.post('/register', async (req, res) => {
     }
 });
 
+// Login route
 routerUser.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
@@ -84,9 +86,10 @@ routerUser.post('/login', async (req, res) => {
         }
 
         // Create the token with owner ID
-        const token = jwt.sign({ id: user.User_id, username: user.username }, JWT_SECRET, { expiresIn: '1h' });
-        
-        res.json({ token });
+        const userToken = jwt.sign({ id: user.User_id, username: user.username }, JWT_SECRET, { expiresIn: '1h' });
+
+        // Return token and any other relevant details
+        res.json({ userToken, username: user.username, user_email: user.user_email });
     } catch (error) {
         console.error('Error logging in:', error);
         res.status(500).json({ message: 'Internal server error.' });
@@ -145,8 +148,8 @@ routerUser.put('/update', verifyJwt, async (req, res) => {
 
 // Logout route
 routerUser.post('/logout', verifyJwt, (req, res) => {
-    const token = req.headers['authorization']?.split(' ')[1];
-    blacklistToken(token);
+    const userToken = req.headers['authorization']?.split(' ')[1];
+    blacklistToken(userToken);
     res.json({ message: 'Logged out successfully.' });
 });
 

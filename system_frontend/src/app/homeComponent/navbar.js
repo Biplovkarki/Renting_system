@@ -1,14 +1,34 @@
 "use client"; 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import logo from "../../../public/logo.png";
 import "../globals.css";
 import { usePathname } from "next/navigation";
 import Link from "next/link"; // Import Link from next/link
+import { useRouter } from "next/navigation"; // Import useRouter for navigation
 
 export default function Navbar() {
   const pathname = usePathname(); // Get the current pathname
   const [menuOpen, setMenuOpen] = useState(false); // State to manage menu toggle
+  const [isLoggedIn, setIsLoggedIn] = useState(false); // State to manage login status
+  const router = useRouter(); // Router hook for navigation
+
+  // Check if user is logged in by looking for a token in localStorage
+  useEffect(() => {
+    const token = localStorage.getItem("userToken");
+    if (token) {
+      setIsLoggedIn(true); // User is logged in
+    } else {
+      setIsLoggedIn(false); // User is not logged in
+    }
+  }, []); // Runs once when the component mounts
+
+  // Logout function
+  const handleLogout = () => {
+    localStorage.removeItem("userToken"); // Remove token from localStorage
+    setIsLoggedIn(false); // Update login status
+    router.push("/"); // Redirect to homepage or login page
+  };
 
   const isActive = (path) => (pathname === path ? "underline" : ""); // Helper to check if path is active
 
@@ -31,7 +51,7 @@ export default function Navbar() {
           <Link href="/homeComponent/Services" className={`${isActive("/homeComponent/Services")} text-lg`}>
             Services
           </Link>
-          <Link href="/vehicles" className={`${isActive("/homeComponent/vehicle")} text-lg`}>
+          <Link href="/vehicles" className={`${isActive("/vehicles")} text-lg`}>
             Vehicles
           </Link>
         </div>
@@ -39,12 +59,28 @@ export default function Navbar() {
 
       {/* Desktop Right Section */}
       <section className="hidden md:flex flex-row gap-4 mx-1 items-center">
-        
-        <Link href="/user/loginuser">
-          <button className="border-2 w-20 h-14 bg-black text-white rounded-xl hover:bg-green-500">
-            Login
-          </button>
-        </Link>
+        {/* Conditionally render Login/Profile/Logout */}
+        {isLoggedIn ? (
+          <>
+            <Link href="/user/profile">
+              <button className="border-2 w-20 h-14 bg-black text-white rounded-xl hover:bg-green-500">
+                Profile
+              </button>
+            </Link>
+            <button
+              className="border-2 w-20 h-14 bg-red-500 text-white rounded-xl hover:bg-red-600"
+              onClick={handleLogout}
+            >
+              Logout
+            </button>
+          </>
+        ) : (
+          <Link href="/user/loginuser">
+            <button className="border-2 w-20 h-14 bg-black text-white rounded-xl hover:bg-green-500">
+              Login
+            </button>
+          </Link>
+        )}
       </section>
 
       {/* Mobile Menu Toggle */}
@@ -88,13 +124,29 @@ export default function Navbar() {
           <Link href="/vehicle" className={`${isActive("/vehicle")} text-xl`} onClick={() => setMenuOpen(false)}>
             Vehicles
           </Link>
-         
 
-          <Link href="/login/loginUser">
-            <button className="border-2 w-24 h-14 bg-black text-white rounded-xl hover:bg-green-500" onClick={() => setMenuOpen(false)}>
-              Login
-            </button>
-          </Link>
+          {/* Conditionally render Login/Profile/Logout */}
+          {isLoggedIn ? (
+            <>
+              <Link href="/user/profile">
+                <button className="border-2 w-24 h-14 bg-black text-white rounded-xl hover:bg-green-500" onClick={() => setMenuOpen(false)}>
+                  Profile
+                </button>
+              </Link>
+              <button
+                className="border-2 w-24 h-14 bg-red-500 text-white rounded-xl hover:bg-red-600"
+                onClick={() => { setMenuOpen(false); handleLogout(); }}
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <Link href="/user/loginUser">
+              <button className="border-2 w-24 h-14 bg-black text-white rounded-xl hover:bg-green-500" onClick={() => setMenuOpen(false)}>
+                Login
+              </button>
+            </Link>
+          )}
         </div>
       </div>
     </nav>

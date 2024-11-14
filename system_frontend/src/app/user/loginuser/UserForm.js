@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/solid';
 import { useRouter } from 'next/navigation';
 
-export default function FormUser(){
+export default function FormUser() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -49,8 +49,8 @@ export default function FormUser(){
     
             const data = await response.json();
     
-            if (response.ok && data.token) {
-                localStorage.setItem('token', data.token);
+            if (response.ok && data.userToken) {
+                localStorage.setItem('userToken', data.token);
                 router.push('/vehicles');
             } else {
                 setError(data.message || 'Login failed. Please check your credentials.');
@@ -63,7 +63,6 @@ export default function FormUser(){
         }
     };
     
-
     return (
         <div>
             <form onSubmit={handleSubmit} className="flex flex-col items-center">

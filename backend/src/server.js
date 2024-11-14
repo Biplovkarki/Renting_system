@@ -47,7 +47,7 @@ app.use('/cat_owner',cat_owner);
 app.use('/users',routerUser);
 app.use('/fetch',fetchRouter);
 app.use('/vehicleApi',vehicleRoutes);
-app.use('/fetch',fetchRoutes);
+app.use('/fetchdetails',fetchRoutes);
 
 const PORT = process.env.PORT || 5000;
 
