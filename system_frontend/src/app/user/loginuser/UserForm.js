@@ -24,20 +24,20 @@ export default function FormUser() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
-    
+
         const emailPattern = /^[^\s@]+@(gmail\.com|yahoo\.com|icloud\.com)$/;
         const passwordPattern = /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[!@#$%^&*()_+=\-{}\[\]:;"'<>?,.\/\\|`~]).{8,}$/;
-    
+
         if (!emailPattern.test(email)) {
             setError('Please enter a valid email (only Gmail, Yahoo, or iCloud).');
-            setLoading(false); // Reset loading state
+            setLoading(false);
             return;
         } else if (!passwordPattern.test(password)) {
             setError('Password must include at least 8 characters long, letters, numbers, and special characters.');
-            setLoading(false); // Reset loading state
+            setLoading(false);
             return;
         }
-    
+
         try {
             const response = await fetch('http://localhost:5000/users/login', {
                 method: 'POST',
@@ -46,23 +46,28 @@ export default function FormUser() {
                 },
                 body: JSON.stringify({ email, password }),
             });
-    
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                setError(errorData.message || 'Login failed');
+                return;
+            }
+
             const data = await response.json();
-    
-            if (response.ok && data.userToken) {
-                localStorage.setItem('userToken', data.token);
+            if (data.userToken) {
+                localStorage.setItem('userToken', data.userToken);
                 router.push('/vehicles');
             } else {
-                setError(data.message || 'Login failed. Please check your credentials.');
-                setLoading(false); // Reset loading state on error
+                setError('Login failed. Please check your credentials.');
             }
         } catch (err) {
             console.error('Login error:', err);
-            setError('An error occurred. Please try again.');
-            setLoading(false); // Reset loading state on error
+            setError('An error occurred. Please try again later.');
+        } finally {
+            setLoading(false);
         }
     };
-    
+
     return (
         <div>
             <form onSubmit={handleSubmit} className="flex flex-col items-center">
@@ -93,8 +98,8 @@ export default function FormUser() {
                         className="flex-grow rounded-3xl bg-slate-200 placeholder:ml-5 p-2 pr-10 w-[310px] focus:border-blue-400"
                         required
                     />
-                    <button 
-                        type="button" 
+                    <button
+                        type="button"
                         className="absolute right-2 top-1/2 transform -translate-y-1/2"
                         onClick={() => setShowPassword(!showPassword)}
                     >
@@ -105,8 +110,8 @@ export default function FormUser() {
                         )}
                     </button>
                 </label>
-                <button 
-                    type="submit" 
+                <button
+                    type="submit"
                     className="mt-4 bg-blue-500 text-white py-2 px-4 w-40 rounded-3xl"
                     disabled={loading}
                 >

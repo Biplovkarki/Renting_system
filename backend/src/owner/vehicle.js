@@ -89,7 +89,11 @@ vehicleRouter.post('/add-vehicle', verifyJwt, upload.fields([
         const { price_id, min_price, max_price } = priceRow[0];
 
         // Check final_price is within the specified range
-        if (final_price < min_price || final_price > max_price) {
+        const finalPriceNum = parseFloat(final_price);
+        if (isNaN(finalPriceNum)) {
+            return res.status(400).json({ message: "Invalid final price: Not a number" });
+        }
+        if (finalPriceNum < min_price || finalPriceNum > max_price) {
             return res.status(400).json({ message: `Final price must be between ${min_price} and ${max_price}` });
         }
 

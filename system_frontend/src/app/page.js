@@ -1,3 +1,4 @@
+"use client"
 import Image from "next/image";
 import cars from "../../public/cars.png";
 import SelectVehicle from "./homeComponent/select";

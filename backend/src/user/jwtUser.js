@@ -8,21 +8,23 @@ const JWT_SECRET = process.env.JWT_SECRET_KEY;
 // In-memory blacklist
 const tokenBlacklist = new Set();
 
-// Middleware to verify JWT and check blacklist
-export const verifyJwt = (req, res, next) => {
-    const token = req.headers['authorization']?.split(' ')[1];
-    if (!token) {
-        return res.status(401).json({ message: 'No token provided.' });
+export const verifyUserJwt = (req, res, next) => {
+    const userToken = req.headers['authorization']?.split(' ')[1]; // renamed to userToken
+
+    if (!userToken) {
+        return res.status(403).json({ message: 'Token is required.' });
     }
 
-    jwt.verify(token, JWT_SECRET, (err, decoded) => {
+    jwt.verify(userToken, JWT_SECRET, (err, decoded) => {  // Use userToken instead of token
         if (err) {
-            return res.status(403).json({ message: 'Token is invalid or expired.' });
+            return res.status(403).json({ message: 'Invalid or expired token.' });
         }
-        req.user = decoded;
+
+        req.user = decoded; // Attach decoded user data to the request object
         next();
     });
 };
+
 // Function to blacklist a token
 export const blacklistToken = (userToken) => {
     tokenBlacklist.add(userToken);

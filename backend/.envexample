@@ -1,0 +1,13 @@
+# .env
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=
+DB_NAME=online_vehicle_renting
+
+PORT= 5000
+
+JWT_SECRET_KEY= ramsaili
+KHALTI_SECRET_KEY=dc01ef22462e41498b8e25ab5e4af914
+WEBSITE_URL=http://localhost:3000
+KHALTI_GATEWAY_URL=https://a.khalti.com/api/v2
+BACKEND_URL=http://localhost:5000

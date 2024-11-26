@@ -15,6 +15,13 @@ import routerUser from './user/userAPI.js';
 import fetchRouter from './admin/fetchAPI.js';
 import vehicleRoutes from './admin/vehicle.js';
 import fetchRoutes from './user/fetchVehicle.js';
+import orderRouter from './order/order.js';
+import routerRent from './order/rent.js';
+import routerRate from './rate/rate.js';
+import AverageRate from './rate/fetchAverage.js';
+import commentRouter from './rate/comment.js';
+import khaliRoutes from './payment/khalti.js';
+//import orderRouter from './order/order.js';
 // import vehicleRouter from './owner/vehicle.js';
 
 dotenv.config();
@@ -48,6 +55,13 @@ app.use('/users',routerUser);
 app.use('/fetch',fetchRouter);
 app.use('/vehicleApi',vehicleRoutes);
 app.use('/fetchdetails',fetchRoutes);
+app.use('/order',orderRouter);
+app.use('/rent',routerRent);
+app.use('/rating',routerRate);
+app.use('/Average',AverageRate);
+app.use('/comments',commentRouter);
+app.use('/khalti',khaliRoutes);
+//app.use('/order',orderRouter);
 
 const PORT = process.env.PORT || 5000;
 

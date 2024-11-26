@@ -82,6 +82,16 @@ const VehicleForm = () => {
         }
     }, [discountPercentage, formData.final_price]);
 
+
+
+    console.log("Final Price:", parseFloat(formData.final_price));
+    // if (parseFloat(formData.final_price) < 50 || parseFloat(formData.final_price) > 100) {
+    //     alert('Final price must be between 50 and 100');
+    //     return;
+    // }
+    
+    // Ensure it's a number
+
     const handleChange = async (e) => {
         const { name, value, type, checked } = e.target;
         setFormData(prevData => ({

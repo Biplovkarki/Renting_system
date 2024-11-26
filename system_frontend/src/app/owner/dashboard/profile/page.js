@@ -1,8 +1,9 @@
 "use client";
-import { useRouter } from "next/navigation";
+
 import { useEffect, useState } from "react";
 import { jwtDecode } from "jwt-decode"; 
 import { UserIcon, EnvelopeIcon, PhoneIcon, HomeIcon } from "@heroicons/react/20/solid";
+import { useRouter } from "next/navigation";
 
 const ProfileOwner = () => {
     const [ownerName, setOwnerName] = useState(''); // Store owner's full name

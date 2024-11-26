@@ -11,6 +11,7 @@ export default function NavbarOwner() {
     useEffect(() => {
         const fetchOwnerProfile = async () => {
             const token = localStorage.getItem('token');
+            
 
             if (token) {
                 try {

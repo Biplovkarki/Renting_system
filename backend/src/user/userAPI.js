@@ -1,8 +1,8 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { db } from '../db.js';
-import { verifyJwt, blacklistToken } from './jwtUser.js'; // JWT functions for user verification
+import { db } from '../db.js'; // Assuming db.js is your database connection
+import { verifyUserJwt, blacklistToken } from './jwtUser.js'; // Your JWT functions
 import dotenv from 'dotenv';
 import multer from 'multer';
 import path from 'path';
@@ -10,147 +10,169 @@ import path from 'path';
 dotenv.config();
 
 const routerUser = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET_KEY;
+const JWT_SECRET = process.env.JWT_SECRET_KEY; // Needs better secret management!
 
-// Set up multer storage configuration
+// Multer storage configuration
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, 'uploads/user'); // Ensure this directory exists
+        cb(null, 'uploads/user'); // Ensure 'uploads/user' directory exists
     },
     filename: (req, file, cb) => {
         cb(null, `userimage_${Date.now()}_${file.originalname}`);
     }
 });
 
-const upload = multer({ storage });
-
-// Endpoint to handle image upload for the owner
-routerUser.post('/uploaduser', verifyJwt, upload.single('UserImage'), (req, res) => {
-    if (!req.file) {
-        return res.status(400).json({ message: "No file uploaded" });
-    }
-
-    const image = req.file.filename; // Uploaded image filename
-    const ownerId = req.user.id; // Extract owner ID from JWT
-
-    const sql = "UPDATE users SET user_image = ? WHERE User_id = ?";
-
-    db.query(sql, [image, ownerId], (err) => {
-        if (err) {
-            console.error("Error updating the image:", err);
-            return res.status(500).json({ message: "Error updating the image" });
+const upload = multer({
+    storage,
+    fileFilter: (req, file, cb) => {
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+        if (!allowedTypes.includes(file.mimetype)) {
+            return cb(new Error('Invalid file type. Only images are allowed.'));
         }
-        return res.json({ status: "Success", image });
-    });
+        cb(null, true);
+    }
+});
+
+// Helper function for database queries
+async function dbQuery(sql, params) {
+    try {
+        const [rows] = await db.promise().query(sql, params);
+        return rows;
+    } catch (error) {
+        console.error("Database error:", error);
+        throw error; // Re-throw for middleware to handle
+    }
+}
+
+
+// Image upload route
+routerUser.post('/uploaduser', verifyUserJwt, upload.single('UserImage'), async (req, res, next) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ message: "No file uploaded" });
+        }
+
+        const image = req.file.filename;
+        const ownerId = req.user.id;
+
+        await dbQuery("UPDATE users SET user_image = ? WHERE User_id = ?", [image, ownerId]);
+        res.json({ status: "Success", image });
+    } catch (error) {
+        next(error);
+    }
 });
 
 // Registration route
-routerUser.post('/register', async (req, res) => {
+routerUser.post('/register', async (req, res, next) => {
     const { username, email, password, phone } = req.body;
 
-    if (!username || !email || !password || !phone) {
-        return res.status(400).json({ message: "All fields are required." });
+    // Simplified validation (check for presence and basic email format)
+    if (!username || !email || !password || !phone || !email.includes('@')) {
+        return res.status(400).json({ message: "All fields are required. Email must contain '@'." });
     }
 
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
-        await db.promise().query(
+        await dbQuery(
             'INSERT INTO users (username, user_email, user_pass, user_phone) VALUES (?, ?, ?, ?)',
             [username, email, hashedPassword, phone]
         );
         res.status(201).json({ message: 'User registered successfully!' });
     } catch (error) {
-        console.error('Error registering user:', error);
-        
-        if (error.code === 'ER_DUP_ENTRY') {
-            return res.status(409).json({ message: 'Email is already in use.' });
-        }
-        res.status(500).json({ message: 'Internal server error.' });
+        next(error);
     }
 });
 
 // Login route
-routerUser.post('/login', async (req, res) => {
+routerUser.post('/login', async (req, res, next) => {
     const { email, password } = req.body;
 
     try {
-        const [rows] = await db.promise().query('SELECT * FROM users WHERE user_email = ?', [email]);
-        if (rows.length === 0) {
+        const users = await dbQuery('SELECT * FROM users WHERE user_email = ?', [email]);
+        if (users.length === 0) {
             return res.status(401).json({ message: 'Invalid email or password.' });
         }
 
-        const user = rows[0];
+        const user = users[0];
         const isMatch = await bcrypt.compare(password, user.user_pass);
         if (!isMatch) {
             return res.status(401).json({ message: 'Invalid email or password.' });
         }
 
-        // Create the token with owner ID
         const userToken = jwt.sign({ id: user.User_id, username: user.username }, JWT_SECRET, { expiresIn: '1h' });
-
-        // Return token and any other relevant details
-        res.json({ userToken, username: user.username, user_email: user.user_email });
+        console.log("Generated Token:", userToken); // Add logging here
+        console.log("Complete Response:", { userToken }); // Log the entire response
+        res.json({ userToken }); 
     } catch (error) {
-        console.error('Error logging in:', error);
-        res.status(500).json({ message: 'Internal server error.' });
+        next(error);
     }
 });
 
-
-// Fetch Owner Profile
-routerUser.get('/profile', verifyJwt, async (req, res) => {
-    const userID = req.user.id;
-
+// Me route
+routerUser.get('/me', verifyUserJwt, async (req, res, next) => {
+    const userId = req.user.id;
     try {
-        const [rows] = await db.promise().query('SELECT * FROM users WHERE User_id = ?', [userID]);
-
-        if (rows.length === 0) {
+        const user = await dbQuery('SELECT * FROM users WHERE User_id = ?', [userId]);
+        if (user.length === 0) {
             return res.status(404).json({ message: 'User not found.' });
         }
-
-        const user = rows[0];
         res.json({
-            userID: user.User_id,
-            username: user.username,
-            user_email: user.user_email,
-            user_phone: user.user_phone,
-            user_image: user.user_image || '',
-            user_address: user.user_address || '',
-            created_at: user.created_at,
+            userID: user[0].User_id,
+            username: user[0].username,
+            user_email: user[0].user_email,
+            user_phone: user[0].user_phone,
+            user_image: user[0].user_image || '',
+            user_address: user[0].user_address || '',
+            created_at: user[0].created_at,
         });
     } catch (error) {
-        console.error('Error fetching user profile:', error);
-        res.status(500).json({ message: 'Internal server error.' });
+        next(error);
     }
 });
 
-// Update Owner Profile
-routerUser.put('/update', verifyJwt, async (req, res) => {
+
+// Profile route (same as /me for simplicity)
+routerUser.get('/profile', verifyUserJwt, async (req, res, next) => {
+    //This route is redundant and identical to /me.  Consider removing it.
+    return routerUser.get('/me')(req, res, next);
+});
+
+// Update Profile route
+routerUser.put('/update', verifyUserJwt, async (req, res, next) => {
     const userID = req.user.id;
     const { username, user_email, user_phone, user_address } = req.body;
 
+    // Simplified validation (check for presence)
     if (!username || !user_email || !user_phone || !user_address) {
         return res.status(400).json({ message: "All fields are required." });
     }
 
     try {
-        await db.promise().query(
+        await dbQuery(
             'UPDATE users SET username = ?, user_email = ?, user_phone = ?, user_address = ? WHERE User_id = ?',
             [username, user_email, user_phone, user_address, userID]
         );
-
         res.json({ message: 'Profile updated successfully!' });
     } catch (error) {
-        console.error('Error updating profile:', error);
-        res.status(500).json({ message: 'Internal server error.' });
+        next(error);
     }
 });
 
+
 // Logout route
-routerUser.post('/logout', verifyJwt, (req, res) => {
+routerUser.post('/logout', verifyUserJwt, (req, res) => {
     const userToken = req.headers['authorization']?.split(' ')[1];
+    if (!userToken) {
+        return res.status(400).json({ message: 'Token is required.' });
+    }
     blacklistToken(userToken);
     res.json({ message: 'Logged out successfully.' });
+});
+
+// Error handling middleware
+routerUser.use((err, req, res, next) => {
+    console.error('Error:', err);
+    res.status(500).json({ message: err.message || 'Internal server error' });
 });
 
 export default routerUser;
