@@ -60,12 +60,12 @@ export default function SidebarUser() {
                     </li>
                     <li>
                         <Link
-                            href="/user/dashboard/settings"
+                            href="/user/dashboard/rating"
                             className={`block py-2 px-4 rounded transition ${
-                                pathname === "/user/dashboard/settings" ? "bg-blue-600" : "hover:bg-blue-600"
+                                pathname === "/user/dashboard/rating" ? "bg-blue-600" : "hover:bg-blue-600"
                             }`}
                         >
-                            <span className="font-medium">⚙️ Settings</span>
+                            <span className="font-medium">🕒 Rental Feedback </span>
                         </Link>
                     </li>
                     <li>

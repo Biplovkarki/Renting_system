@@ -90,7 +90,7 @@ userDetails.get('/upcoming-rental-details/:userId', async (req, res) => {
     try {
         const userId = req.params.userId;
         const query = `SELECT 
-             o.rent_start_date, o.rent_end_date,v.vehicle_name, v.model, v.fuel_type, v.transmission, 
+             o.rent_start_date, o.rent_end_date,v.vehicle_id,v.vehicle_name, v.model, v.fuel_type, v.transmission, 
              o.grand_total, o.paid_status 
             FROM orders o
             JOIN vehicle v ON o.vehicle_id = v.vehicle_id
@@ -105,6 +105,29 @@ userDetails.get('/upcoming-rental-details/:userId', async (req, res) => {
         res.json(results);
     } catch (error) {
         console.error("Error fetching upcoming rentals:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+userDetails.get('/past-rental-details/:userId', async (req, res) => {
+    try {
+        const userId = req.params.userId;
+        const query = `SELECT 
+             o.rent_start_date, o.rent_end_date,v.vehicle_id,v.vehicle_name, v.model, v.fuel_type, v.transmission, 
+             o.grand_total, o.paid_status 
+            FROM orders o
+            JOIN vehicle v ON o.vehicle_id = v.vehicle_id
+            WHERE o.user_id = ? AND o.rent_end_date < CURDATE()`;
+
+        const [results] = await db.promise().query(query, [userId]);
+
+        if (results.length === 0) {
+            return res.status(404).json({ message: "No past rentals found." });
+        }
+
+        res.json(results);
+    } catch (error) {
+        console.error("Error fetching past rentals:", error);
         res.status(500).json({ error: "Internal server error" });
     }
 });

@@ -11,7 +11,6 @@ const checkIfOrderExpired = (orderCreationTime) => {
 };
 
 // Route to create or handle existing orders
-// Route to create or handle existing orders
 orderRouter.post('/create', verifyUserJwt, async (req, res) => {
     const { user_id, vehicle_id } = req.body;
 
@@ -21,6 +20,26 @@ orderRouter.post('/create', verifyUserJwt, async (req, res) => {
     }
 
     try {
+        // Check if the user has required fields filled in
+        const [userResult] = await db.promise().query(`
+            SELECT username, user_email, user_phone, user_image, user_address 
+            FROM users WHERE user_id = ?
+        `, [user_id]);
+
+        // If any required field is missing, return an error message
+        const missingFields = [];
+        if (!userResult[0].username) missingFields.push('Name');
+        if (!userResult[0].user_email) missingFields.push('Email');
+        if (!userResult[0].user_phone) missingFields.push('Phone');
+        if (!userResult[0].user_image) missingFields.push('Image');
+        if (!userResult[0].user_address) missingFields.push('Address');
+
+        if (missingFields.length > 0) {
+            return res.status(400).json({
+                message: `Please complete your profile. Missing fields: ${missingFields.join(', ')}.`,
+            });
+        }
+
         await db.promise().beginTransaction();
 
         // Check for existing expired or cancelled orders (allow creation if they exist)
@@ -107,6 +126,7 @@ orderRouter.post('/create', verifyUserJwt, async (req, res) => {
         return res.status(500).json({ message: 'Error creating order', error: error.message });
     }
 });
+
 
 // Route to cancel an order
 orderRouter.post('/cancel', verifyUserJwt, async (req, res) => {
@@ -214,7 +234,7 @@ const updateExpiredAndCancelledOrders = async () => {
         const [expiredAndCancelledOrders] = await db.promise().query(`
             SELECT order_id, vehicle_id, status, created_at
             FROM orders
-            WHERE status IN ('draft', 'cancelled', 'payment_pending')
+            WHERE status IN ('draft', 'cancelled', 'expires','payment_pending')
         `);
 
         for (const order of expiredAndCancelledOrders) {
@@ -235,7 +255,7 @@ const updateExpiredAndCancelledOrders = async () => {
             }
 
             // Handle cancelled orders: delete them and update vehicle availability
-            if (status === 'cancelled') {
+            if (status === 'cancelled' || status === 'expires' ) {
                 // Delete the cancelled order from the database
                 await db.promise().query(`
                     DELETE FROM orders WHERE order_id = ?

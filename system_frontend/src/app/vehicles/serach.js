@@ -97,7 +97,7 @@ const VehicleSearch = ({ onVehicleSelect }) => {
   return (
     <div className="vehicle-search-container max-w-screen-lg mx-auto p-6">
       {/* Wrapper for Category and Search Bar */}
-      <div className="flex items-center space-x-4 mb-6 border-2 border-red-500">
+      <div className="flex items-center space-x-4 mb-6">
         {/* Category Dropdown */}
         <div className="category-filter flex items-center">
           <select

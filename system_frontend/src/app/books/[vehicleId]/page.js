@@ -257,16 +257,8 @@ const VehicleDetailPage = () => {
         return (
            
             <span className="flex flex-wrap gap-2">
-                <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-md">{vehicle.transmission}</span>
-                <span className="px-3 py-1 bg-green-100 text-green-700 rounded-md">{vehicle.fuel_type}</span>
-                <span
-                    className={`px-3  rounded-md ${vehicle.availability ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}
-                >
-                    {vehicle.availability ? "Available" : "Not Available"}
-                </span>
-               
-
-                
+                <span className="px-3 py-1 h-8 bg-blue-100 text-blue-700 rounded-md">{vehicle.transmission}</span>
+                <span className="px-3 py-1 h-8 bg-green-100 text-green-700 rounded-md">{vehicle.fuel_type}</span>
             </span>
         );
     };
@@ -352,11 +344,14 @@ const VehicleDetailPage = () => {
                 <div className="w-full lg:w-7/12 relative">
                     <ImageCarousel images={images} currentImageIndex={currentImageIndex} setCurrentImageIndex={setCurrentImageIndex} />
                 </div>
-                <div className="w-full lg:w-5/12 space-y-6  border-2 border-black">
-                    <div className="space-y-4 border-2 border-red-600">
+                <div className="w-full lg:w-5/12 space-y-6  ">
+                    <div className="space-y-4 ">
                         <h2 className="text-3xl font-semibold">{vehicle.vehicle_name}, {vehicle.model}</h2>
-                        <span className=""><AverageRating  vehicleId={vehicleId}/></span>
-                        <VehicleInfoBadges vehicle={vehicle} />
+                        <div className="flex flex-row h-9 z-0 items-center  gap-2">
+    <VehicleInfoBadges vehicle={vehicle} />
+    <span className="relative -top-1 z-10"><AverageRating vehicleId={vehicleId} /></span>
+</div>
+
                         <div className="grid grid-cols-2 gap-4 mt-4">
                             <div className="font-semibold">Engine:</div>
                             <div>{vehicle.cc} CC</div>
@@ -418,101 +413,6 @@ const VehicleDetailPage = () => {
                     </div>
                 </div>
             )}
-        </div>
-    );
-};
-
-const ImageCarousel = ({ images, currentImageIndex, setCurrentImageIndex }) => {
-    return (
-        <Tab.Group selectedIndex={currentImageIndex} onChange={setCurrentImageIndex}>
-            <div className="relative h-[400px] bg-gray-200 rounded-lg overflow-hidden shadow-lg">
-                <Tab.Panels>
-                    {images.map((image, idx) => (
-                        <Tab.Panel key={idx}>
-                            <img
-                                src={`http://localhost:5000/${image.url}`}
-                                alt={image.label}
-                                className="w-full h-[400px] object-contain"
-                            />
-                        </Tab.Panel>
-                    ))}
-                </Tab.Panels>
-                <button
-                    onClick={() => setCurrentImageIndex((prevIndex) => (prevIndex - 1 + images.length) % images.length)}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full"
-                >
-                    <ChevronLeft className="w-6 h-6" />
-                </button>
-                <button
-                    onClick={() => setCurrentImageIndex((prevIndex) => (prevIndex + 1) % images.length)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full"
-                >
-                    <ChevronRight className="w-6 h-6" />
-                </button>
-            </div>
-            <Tab.List className="flex gap-3 mt-4">
-                {images.map((image, idx) => (
-                    <Tab
-                        key={idx}
-                        className={({ selected }) =>
-                            `w-20 h-20 rounded-lg overflow-hidden focus:outline-none ${selected ? "ring-2 ring-blue-500" : ""}`
-                        }
-                    >
-                        <img
-                            src={`http://localhost:5000/${image.url}`}
-                            alt={image.label}
-                            className="w-full h-full object-contain"
-                        />
-                    </Tab>
-                ))}
-            </Tab.List>
-        </Tab.Group>
-    );
-};
-
-const VehicleInfoBadges = ({ vehicle }) => {
-    return (
-        <span className="flex flex-wrap gap-2">
-        <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-md flex items-center h-8">
-            {vehicle.transmission}
-        </span>
-       
-        <span className="px-3 py-1 bg-green-100 text-green-700 rounded-md flex items-center h-8">
-            {vehicle.fuel_type}
-        </span>
-        <div className={`py-1 px-3 flex items-center h-8 ${ vehicle.availability ? "bg-green-100   text-green-700" : "bg-red-100  text-red-700"}`}>
-            {vehicle.availability ? "Available" : "Not Available"}
-        </div>
-    </span>
-    
-
-    );
-};
-
-const RentalInfo = ({ vehicle, formatPrice, formatTime, timeLeft }) => {
-    return (
-        <div className="space-y-4 mt-6">
-            <div className="text-right text-gray-500 text-sm mb-2">
-                Time remaining: {formatTime(timeLeft)}
-            </div>
-            <h2 className="text-2xl font-semibold">Rental Information</h2>
-            <div className="grid grid-cols-2 gap-6">
-                <div className="font-semibold">Price:</div>
-                <div className="flex items-center gap-2">
-                    <p className="text-gray-700 font-semibold">
-                        {vehicle.discounted_price && vehicle.discounted_price < vehicle.final_price ? (
-                            <>
-                                <span className="line-through text-red-600 mr-2">{formatPrice(vehicle.final_price)}</span>
-                                <span className="text-green-600">{formatPrice(vehicle.discounted_price)}</span>
-                            </>
-                        ) : (
-                            <span className="text-green-600">{formatPrice(vehicle.final_price)}</span>
-                        )}
-                    </p>
-                </div>
-                <div className="font-semibold">Discount:</div>
-                <div>{vehicle.discount_percentage ? `${vehicle.discount_percentage}%` : "N/A"}</div>
-            </div>
         </div>
     );
 };

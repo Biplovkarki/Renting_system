@@ -33,8 +33,6 @@ const upload = multer({
   },
 });
 
-// Route to update rental details
-// Route to update rental details
 routerRent.patch(
   "/:user_id/:vehicle_id/:order_id",
   verifyUserJwt,
@@ -69,20 +67,13 @@ routerRent.patch(
         return res.status(404).json({ message: "Order not found." });
       }
 
-      // Check if the order status is 'draft' or 'payment_pending'
       const { rent_start_date: orderStart, rent_end_date: orderEnd, terms: orderTerms, licenseImage: orderLicense, status } =
         orderDetails[0];
 
-      if (status !== 'draft' && status !== 'payment_pending' && status !== 'expires') {
+      // Check if the order can be updated based on status and existing rental details.
+      if (orderStart && orderEnd && orderTerms && orderLicense && status !== 'draft' && status !== 'payment_pending') {
         return res.status(400).json({
-          message: "Order cannot be updated unless the status is 'draft', 'payment_pending', or 'expires'.",
-        });
-      }
-
-      // If the order already has rental details, reject the update
-      if (orderStart && orderEnd && orderTerms && orderLicense) {
-        return res.status(400).json({
-          message: "Order already has rental details. Cannot update finalized order.",
+          message: "Order already has rental details. Cannot update finalized order unless status is 'draft' or 'payment_pending'.",
         });
       }
 
@@ -104,7 +95,7 @@ routerRent.patch(
 
       // Check if the vehicle is already rented during the requested period
       const [existingOrders] = await db.promise().query(
-        `SELECT rent_start_date, rent_end_date, status FROM orders WHERE vehicle_id = ? AND status NOT IN ('canceled', 'expires') AND status IN ('completed', 'payment_pending', 'draft', 'expires') AND (
+        `SELECT rent_start_date, rent_end_date, status FROM orders WHERE vehicle_id = ? AND status NOT IN ('canceled', 'expires') AND (
           (rent_start_date BETWEEN ? AND ?) OR 
           (rent_end_date BETWEEN ? AND ?) OR 
           (? BETWEEN rent_start_date AND rent_end_date) OR 
@@ -112,27 +103,23 @@ routerRent.patch(
         )`,
         [
           vehicle_id,
-          rent_start_date, rent_end_date,
-          rent_start_date, rent_end_date,
-          rent_start_date, rent_end_date,
+          rent_start_date,
+          rent_end_date,
+          rent_start_date,
+          rent_end_date,
+          rent_start_date,
+          rent_end_date,
         ]
       );
 
+      // Check if the vehicle is already rented during the requested period
       if (existingOrders.length > 0) {
-        const conflictingOrder = existingOrders[0];
-        
-        // Allow updating the same dates for draft, payment_pending, or expires orders
-        if (conflictingOrder.status === 'draft' || conflictingOrder.status === 'payment_pending' || conflictingOrder.status === 'expires') {
-          // If it's the same date and the order is draft, payment_pending, or expires, no conflict
-          if (conflictingOrder.rent_start_date === rent_start_date && conflictingOrder.rent_end_date === rent_end_date) {
-            // No conflict, proceed with the update
-          } else {
-            return res.status(400).json({
-              message: "Vehicle is already rented during the requested period.",
-              conflictingDates: existingOrders,
-            });
-          }
-        } else {
+        // Check if any of the conflicting orders are in 'draft' or 'payment_pending' status
+        const conflictingOrderStatuses = existingOrders.filter(order => 
+          order.status !== 'draft' && order.status !== 'payment_pending'
+        );
+
+        if (conflictingOrderStatuses.length > 0) {
           return res.status(400).json({
             message: "Vehicle is already rented during the requested period.",
             conflictingDates: existingOrders,
@@ -154,7 +141,7 @@ routerRent.patch(
 
       // Check if the discount is enabled
       const [discountDetails] = await db.promise().query(
-        `SELECT is_enabled FROM discounts WHERE category_id = (SELECT category_id FROM vehicle WHERE vehicle_id = ?)`,
+        `SELECT is_enabled FROM discounts WHERE category_id = (SELECT category_id FROM vehicle WHERE vehicle_id = ?)` ,
         [vehicle_id]
       );
 
@@ -195,6 +182,7 @@ routerRent.patch(
     }
   }
 );
+
 
 
 // Route to handle COD (Cash on Delivery) payment

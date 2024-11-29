@@ -9,6 +9,16 @@ dotenv.config();
 const routerOwner = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET_KEY;
 
+async function dbQuery(sql, params) {
+    try {
+        const [rows] = await db.promise().query(sql, params);
+        return rows;
+    } catch (error) {
+        console.error("Database error:", error);
+        throw error; // Re-throw for middleware to handle
+    }
+}
+
 // Registration route
 routerOwner.post('/register', async (req, res) => {
     const { ownername, email, password, phone } = req.body;
@@ -105,6 +115,59 @@ routerOwner.put('/update', verifyJwt, async (req, res) => {
     } catch (error) {
         console.error('Error updating profile:', error);
         res.status(500).json({ message: 'Internal server error.' });
+    }
+});
+
+//chnage password
+routerOwner.put('/change-password', verifyJwt, async (req, res) => {
+    const ownerId = req.owner.id;
+    const { currentPassword, newPassword, confirmPassword } = req.body;
+
+    // Input Validation (essential for security)
+    if (!currentPassword || !newPassword || !confirmPassword) {
+        return res.status(400).json({ message: 'All fields are required.' });
+    }
+    if (newPassword !== confirmPassword) {
+        return res.status(400).json({ message: 'New passwords do not match.' });
+    }
+    if (newPassword.length < 8) { // Adjust minimum length as needed
+        return res.status(400).json({ message: 'Password must be at least 8 characters long.' });
+    }
+
+
+    try {
+        console.log('Fetching owner with ID:', ownerId);
+        // Use parameterized query to prevent SQL injection
+        const [ownerData] = await dbQuery('SELECT own_pass FROM owners WHERE Owner_id = ?', [ownerId]);
+
+        //Robust error handling for various scenarios
+        if (!ownerData) {
+            return res.status(404).json({ message: 'owner not found.' });
+        }
+
+        const currentHashedPassword = ownerData.own_pass;
+        const isMatch = await bcrypt.compare(currentPassword, currentHashedPassword);
+
+        if (!isMatch) {
+            return res.status(401).json({ message: 'Incorrect current password.' });
+        }
+
+        // Prevent reusing the same password
+        if (await bcrypt.compare(newPassword, currentHashedPassword)) {
+            return res.status(400).json({ message: 'New password cannot be the same as the current password.' });
+        }
+
+        const hashedNewPassword = await bcrypt.hash(newPassword, 10); // Adjust salt rounds as needed
+
+        // Update password in the database (parameterized query)
+        await dbQuery('UPDATE owners SET own_pass = ? WHERE Owner_id = ?', [hashedNewPassword, ownerId]);
+
+        res.json({ message: 'Password updated successfully!' });
+
+    } catch (error) {
+        console.error('Error changing password:', error);
+        // Generic error message for security; log details for debugging
+        res.status(500).json({ message: 'Failed to update password. Please try again later.' });
     }
 });
 

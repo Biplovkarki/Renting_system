@@ -91,14 +91,17 @@ const VehicleList = () => {
     const handleCreateOrder = async (vehicleId) => {
         console.log('handleCreateOrder called');
         console.log('Vehicle ID:', vehicleId);
+    
         try {
             const token = localStorage.getItem('userToken');
             if (!userId) {
                 alert('User not logged in');
                 return;
             }
-
+    
             console.log('User ID:', userId);
+    
+            // Send the request to create an order
             const response = await axios.post(
                 'http://localhost:5000/order/create',
                 { user_id: userId, vehicle_id: vehicleId },
@@ -108,18 +111,26 @@ const VehicleList = () => {
                     },
                 }
             );
-
+    
             console.log("Order created:", response.data);
+    
+            // If order is successfully created, proceed
             alert('Your order has been created. You have 5 minutes to complete the rental process.');
             localStorage.setItem('orderId', response.data.order_id);
             localStorage.setItem('orderTimeout', Date.now() + 10 * 60 * 1000);
-
+    
             router.push(`/books/${vehicleId}`);
         } catch (error) {
-            console.error('Error creating order:', error);
-            alert('An error occurred while creating the order. Please try again.');
+            if (error.response && error.response.data.message) {
+                // If the backend sends an error message (e.g., missing fields in user profile)
+                alert(`Error: ${error.response.data.message}`);
+            } else {
+                console.error('Error creating order:', error);
+                alert('An error occurred while creating the order. Please try again.');
+            }
         }
-    };
+    };    
+    
 
     const handleVehicleSelect = (vehicleId) => {
         setFocusedVehicleId(vehicleId);

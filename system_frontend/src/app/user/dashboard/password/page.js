@@ -117,8 +117,8 @@ const ChangePassword = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 px-4 py-12">
-    <div className=" w-full bg-white shadow-xl rounded-xl p-8 border border-gray-200 ">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 px-4 py-10">
+    <div className=" w-full bg-white shadow-xl rounded-xl  border border-gray-200 ">
       <div className="mb-8 text-center">
         <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">Change Password</h2>
       </div>

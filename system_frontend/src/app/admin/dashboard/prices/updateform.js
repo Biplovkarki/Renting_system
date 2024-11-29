@@ -1,4 +1,3 @@
-"use client";
 import { useEffect, useState } from "react";
 
 const PriceForm = ({ price, onClose, onPriceUpdated, isUpdating }) => {
@@ -9,7 +8,7 @@ const PriceForm = ({ price, onClose, onPriceUpdated, isUpdating }) => {
     const handleSubmit = (e) => {
         e.preventDefault();
         // Validate that minPrice is not greater than maxPrice
-        if (parseFloat(minPrice) > parseFloat(maxPrice)) {
+        if (parseInt(minPrice) > parseInt(maxPrice)) {
             setError("Minimum price cannot be greater than maximum price.");
             return; // Prevent submission if validation fails
         }
@@ -17,8 +16,8 @@ const PriceForm = ({ price, onClose, onPriceUpdated, isUpdating }) => {
 
         const updatedPrice = {
             ...price,
-            min_price: minPrice,
-            max_price: maxPrice,
+            min_price: parseInt(minPrice), // Convert to integer
+            max_price: parseInt(maxPrice), // Convert to integer
         };
         onPriceUpdated(updatedPrice);
     };
@@ -62,7 +61,7 @@ const PriceForm = ({ price, onClose, onPriceUpdated, isUpdating }) => {
                     onClick={onClose} // Call the onClose function
                     className="bg-gray-300 text-gray-700 py-2 px-4 rounded"
                 >
-                  Cancel
+                    Cancel
                 </button>
             </div>
         </form>

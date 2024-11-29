@@ -124,7 +124,6 @@ export default function PriceList() {
                     <table className="min-w-full bg-white border border-gray-300">
                         <thead className="bg-gray-200">
                             <tr>
-                                
                                 <th className="py-3 px-4 border-b border-gray-300 text-left text-gray-700">Category Name</th>
                                 <th className="py-3 px-4 border-b border-gray-300 text-left text-gray-700">Min Price</th>
                                 <th className="py-3 px-4 border-b border-gray-300 text-left text-gray-700">Max Price</th>
@@ -135,8 +134,8 @@ export default function PriceList() {
                             {prices.map((price) => (
                                 <tr key={price.price_id} className="hover:bg-gray-100">
                                     <td className="py-3 px-4 border-b border-gray-300">{categoryMap[price.category_id] || "Unknown Category"}</td>
-                                    <td className="py-3 px-4 border-b border-gray-300">{price.min_price}</td>
-                                    <td className="py-3 px-4 border-b border-gray-300">{price.max_price}</td>
+                                    <td className="py-3 px-4 border-b border-gray-300">{Math.round(price.min_price)}</td>
+                                    <td className="py-3 px-4 border-b border-gray-300">{Math.round(price.max_price)}</td>
                                     <td className="py-4 px-4 border-b border-gray-300 flex space-x-4">
                                         <PencilIcon
                                             className="h-5 w-5 text-blue-500 cursor-pointer"
@@ -158,10 +157,8 @@ export default function PriceList() {
             {isModalOpen && (
                 <div className="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50">
                     <div className="bg-white rounded-lg shadow-lg p-6 w-1/3 z-10">
-                    <h2 className="text-xl font-bold mb-4">Edit Price</h2>
-                   
+                        <h2 className="text-xl font-bold mb-4">Edit Price</h2>
                         <PriceForm price={selectedPrice} onClose={closeModal} onPriceUpdated={updatePrice} isUpdating={isUpdating} />
-                        
                     </div>
                 </div>
             )}

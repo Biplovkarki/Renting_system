@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';  
 import { jwtDecode } from 'jwt-decode';
 import { CameraIcon } from '@heroicons/react/20/solid';
@@ -10,7 +10,7 @@ import axios from 'axios';
 import { Bars2Icon, XMarkIcon } from '@heroicons/react/20/solid'; // Importing the close icon
 
 export default function SidebarOwner() {
-    const router = useRouter();
+ 
     const [ownerName, setOwnerName] = useState('');
     const [isOpen, setIsOpen] = useState(false);
     const [isImageOpen, setIsImageOpen] = useState(false);
@@ -18,6 +18,8 @@ export default function SidebarOwner() {
     const [file, setFile] = useState(null);
     const [image, setImage] = useState(null);
     const [isSidebarOpen, setIsSidebarOpen] = useState(true); // State for sidebar visibility
+    const router = useRouter();
+    const pathname = usePathname();
 
     const handleFile = (e) => {
         setFile(e.target.files[0]);
@@ -109,7 +111,7 @@ export default function SidebarOwner() {
 
     return (
         <div className="flex">
-            <div className={`flex flex-col h-screen w-64 bg-gray-800 text-white p-4 transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+            <div className={`flex flex-col min-h-screen w-64 bg-gray-800 text-white p-4 transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
                 <div className="flex items-center mb-4">
                     <div className='border-2 rounded-full w-fit h-fit relative'>
                         <Image
@@ -132,24 +134,51 @@ export default function SidebarOwner() {
                 <nav>
                     <ul className="flex flex-col space-y-2">
                         <li>
-                            <Link href="/owner/dashboard" className="block p-2 hover:bg-gray-700 rounded">Home</Link>
+                            <Link href="/owner/dashboard"   className={`block py-2 px-4 rounded transition ${
+                                pathname === "/owner/dashboard" ? "bg-blue-600" : "hover:bg-blue-600"
+                            }`}> 🏠 Home</Link>
                         </li>
                         <li>
-                            <Link href="/owner/dashboard/profile" className="block p-2 hover:bg-gray-700 rounded">Profile</Link>
+                            <Link href="/owner/dashboard/profile"   className={`block py-2 px-4 rounded transition ${
+                                pathname === "/owner/dashboard/profile" ? "bg-blue-600" : "hover:bg-blue-600"
+                            }`}>👤 Profile</Link>
                         </li>
                         <li>
-                            <Link href="/owner/dashboard/vehicles" className="block p-2 hover:bg-gray-700 rounded">My Vehicles</Link>
+                            <Link href="/owner/dashboard/vehicles" className={`block py-2 px-4 rounded transition ${
+                                pathname === "/owner/dashboard/vehicles" ? "bg-blue-600" : "hover:bg-blue-600"
+                            }`}>➕ Add Vehicles</Link>
                         </li>
                         <li>
-                            <button
-                                onClick={handleLogout}
-                                className="block w-full text-left p-2 hover:bg-gray-700 rounded bg-red-500 text-white"
-                            >
-                                Logout
-                            </button>
-                        </li>
+                        <Link
+                            href="/owner/dashboard/password"
+                            className={`block py-2 px-4 rounded transition ${
+                                pathname === "/owner/dashboard/password" ? "bg-blue-600" : "hover:bg-blue-600"
+                            }`}
+                        >
+                            <span className="font-medium">🔑 Change Password</span>
+                        </Link>
+                    </li>
+                        <li>
+                        <Link
+                            href="/owner/dashboard/vehiclelist"
+                            className={`block py-2 px-4 rounded transition ${
+                                pathname === "/owner/dashboard/vehiclelist" ? "bg-blue-600" : "hover:bg-blue-600"
+                            }`}
+                        >
+                            <span className="font-medium">🚘 vehicles </span>
+                        </Link>
+                    </li>
+                       
                     </ul>
                 </nav>
+                <div className="mt-auto">
+        <button
+            onClick={handleLogout}
+            className="block w-full text-left p-2 hover:bg-gray-700 rounded bg-red-500 text-white"
+        >
+            🚪 Logout
+        </button>
+    </div>
 
                 {/* Image upload dialog */}
                 <Dialog open={isOpen} as="div" className="relative z-10 focus:outline-none" onClose={() => setIsOpen(false)}>
@@ -210,6 +239,7 @@ export default function SidebarOwner() {
             >
                 {isSidebarOpen ? <Bars2Icon className="h-6 w-6" /> : <Bars2Icon className="h-6 w-6" />}
             </button>
+            
         </div>
     );
 }

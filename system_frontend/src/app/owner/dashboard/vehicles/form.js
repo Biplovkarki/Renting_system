@@ -75,9 +75,11 @@ const VehicleForm = () => {
     }, []);
 
     useEffect(() => {
-        if (discountPercentage && formData.final_price) {
-            const discountedPrice = (formData.final_price - (formData.final_price * discountPercentage) / 100).toFixed(2);
-            setFormData(prev => ({ ...prev, discounted_price: discountedPrice }));
+        if (discountPercentage !== null && formData.final_price) {
+            const discountedPrice = formData.final_price - (formData.final_price * discountPercentage) / 100;
+            // Round to the nearest integer
+            const roundedDiscountedPrice = Math.round(discountedPrice);
+            setFormData(prev => ({ ...prev, discounted_price: roundedDiscountedPrice }));
         } else {
             setFormData(prev => ({ ...prev, discounted_price: '' }));
         }
