@@ -1,9 +1,10 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { InformationCircleIcon } from '@heroicons/react/24/solid';
+import { InformationCircleIcon, CogIcon, StarIcon, BanknotesIcon, FunnelIcon } from '@heroicons/react/24/solid';
 import { useRouter } from 'next/navigation';
 import { jwtDecode } from 'jwt-decode';
+import VehicleSearch from './serach';
 
 const VehicleList = () => {
     const [vehicles, setVehicles] = useState([]);
@@ -14,6 +15,9 @@ const VehicleList = () => {
     const [showModal, setShowModal] = useState(false);
     const [selectedVehicle, setSelectedVehicle] = useState(null);
     const [userId, setUserId] = useState(null);
+    const [focusedVehicleId, setFocusedVehicleId] = useState(null);
+    const [sortBy, setSortBy] = useState('final_price');
+    const [order, setOrder] = useState('asc');
     const router = useRouter();
 
     useEffect(() => {
@@ -50,7 +54,29 @@ const VehicleList = () => {
             }
         };
         fetchVehiclesAndCategories();
-    }, [selectedCategory]);
+    }, [selectedCategory, focusedVehicleId]);
+
+    useEffect(() => {
+        const fetchSortedVehicles = async () => {
+            try {
+                setLoading(true);
+                const response = await axios.get('http://localhost:5000/sort/vehicles', {
+                    params: { sortBy, order },
+                });
+                setVehicles(response.data);
+            } catch (error) {
+                setError(`Failed to load sorted vehicles: ${error.message}`);
+                console.error('Error fetching sorted vehicles:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchSortedVehicles();
+    }, [sortBy, order]);
+    console.log("Fetched vehicles:", vehicles);
+
+    console.log("SortBy:", sortBy, "Order:", order);
+
 
     const openModal = (vehicle) => {
         setSelectedVehicle(vehicle);
@@ -71,37 +97,39 @@ const VehicleList = () => {
                 alert('User not logged in');
                 return;
             }
-    
-            console.log('User ID:', userId);  
+
+            console.log('User ID:', userId);
             const response = await axios.post(
                 'http://localhost:5000/order/create',
                 { user_id: userId, vehicle_id: vehicleId },
                 {
                     headers: {
-                        Authorization: `Bearer ${token}`,  // Ensure this token is valid
+                        Authorization: `Bearer ${token}`,
                     },
                 }
             );
-    
+
             console.log("Order created:", response.data);
             alert('Your order has been created. You have 5 minutes to complete the rental process.');
-            localStorage.setItem('orderId', response.data.order_id); // Store orderId
+            localStorage.setItem('orderId', response.data.order_id);
             localStorage.setItem('orderTimeout', Date.now() + 10 * 60 * 1000);
-        
-            // Optionally, redirect to the vehicle details page or another relevant page
+
             router.push(`/books/${vehicleId}`);
         } catch (error) {
             console.error('Error creating order:', error);
             alert('An error occurred while creating the order. Please try again.');
         }
     };
-    
+
+    const handleVehicleSelect = (vehicleId) => {
+        setFocusedVehicleId(vehicleId);
+    };
+
+    const formatPrice = (price) => `Rs. ${Math.round(price).toLocaleString()}`;
 
     if (loading) return <div className="text-center text-gray-500">Loading... <span className="animate-spin rounded-full h-8 w-8 border-4 border-t-4 border-gray-500"></span></div>;
     if (error) return <div className="text-center text-red-500">{error}</div>;
     if (vehicles.length === 0) return <div className="text-center text-gray-500">No vehicles found matching your selection.</div>;
-
-    const formatPrice = (price) => `Rs. ${Math.round(price).toLocaleString()}`;
 
     const groupedVehicles = vehicles.reduce((groups, vehicle) => {
         const categoryName = vehicle.category_name;
@@ -110,49 +138,115 @@ const VehicleList = () => {
         return groups;
     }, {});
 
+    const getSortedVehicles = (vehicles) => {
+        let vehiclesCopy = [...vehicles];
+        const focusedIndex = vehiclesCopy.findIndex((v) => v.vehicle_id === focusedVehicleId);
+        if (focusedIndex !== -1) {
+            const [focusedVehicle] = vehiclesCopy.splice(focusedIndex, 1);
+            vehiclesCopy.unshift(focusedVehicle);
+        }
+        return vehiclesCopy;
+    };
+
     return (
-        <div className="container mx-auto max-w-screen-xl p-4">
-            <div className="flex justify-center border-b border-gray-200 mb-6">
-                <CategoryButton selected={selectedCategory === null} onClick={() => setSelectedCategory(null)}>All Categories</CategoryButton>
-                {categories.map((category) => (
-                    <CategoryButton key={category.category_id} selected={selectedCategory === category.category_id} onClick={() => setSelectedCategory(category.category_id)}>
-                        {category.category_name}
-                    </CategoryButton>
-                ))}
+        <div>
+            <VehicleSearch onVehicleSelect={handleVehicleSelect} />
+
+            <div className="container mx-auto max-w-screen-xl p-4">
+                <div className="flex justify-between mb-6">
+                    <div className="flex gap-3">
+                        <CategoryButton selected={selectedCategory === null} onClick={() => setSelectedCategory(null)}>All Categories</CategoryButton>
+                        {categories.map((category) => (
+                            <CategoryButton key={category.category_id} selected={selectedCategory === category.category_id} onClick={() => setSelectedCategory(category.category_id)}>
+                                {category.category_name}
+                            </CategoryButton>
+                        ))}
+                    </div>
+                    <div className="flex gap-3">
+                        <div className="relative">
+                            <select
+                                onChange={(e) => setSortBy(e.target.value)}
+                                value={sortBy}
+                                className="p-2 border rounded-md pr-8"
+                            >
+                                <option value="final_price">Price</option>
+                                <option value="cc">CC</option>
+                                <option value="rating_value">Rating</option>
+                                <option value="availability">Availability</option>
+                            </select>
+                            <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+                                {sortBy === "final_price" && <BanknotesIcon className="w-5 h-5" />}
+                                {sortBy === "cc" && <CogIcon className="w-5 h-5" />}
+                                {sortBy === "rating_value" && <StarIcon className="w-5 h-5" />}
+                                {sortBy === "availability" && <FunnelIcon className="w-5 h-5" />}
+                            </div>
+                        </div>
+
+                        <div className="relative">
+                            <select
+                                onChange={(e) => setOrder(e.target.value)}
+                                value={order}
+                                className="p-2 border rounded-md pr-8">
+                                <option value="asc">Low to High</option>
+                                <option value="desc">High to Low</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div className="space-y-6">
+                    {selectedCategory === null ? (
+                        Object.keys(groupedVehicles).map((categoryName) => (
+                            <VehicleCategory
+                                key={categoryName}
+                                categoryName={categoryName}
+                                vehicles={getSortedVehicles(groupedVehicles[categoryName])}
+                                handleCreateOrder={handleCreateOrder}
+                                openModal={openModal}
+                                focusedVehicleId={focusedVehicleId}
+                            />
+                        ))
+                    ) : (
+                        <VehicleCategory
+                            vehicles={getSortedVehicles(vehicles)}
+                            handleCreateOrder={handleCreateOrder}
+                            openModal={openModal}
+                            focusedVehicleId={focusedVehicleId}
+                        />
+                    )}
+                </div>
+                {showModal && selectedVehicle && <VehicleModal vehicle={selectedVehicle} closeModal={closeModal} />}
             </div>
-            <div className="space-y-6">
-                {selectedCategory === null ? (
-                    Object.keys(groupedVehicles).map((categoryName) => (
-                        <VehicleCategory key={categoryName} categoryName={categoryName} vehicles={groupedVehicles[categoryName]} handleCreateOrder={handleCreateOrder} openModal={openModal} />
-                    ))
-                ) : (
-                    <VehicleCategory vehicles={vehicles} handleCreateOrder={handleCreateOrder} openModal={openModal} />
-                )}
-            </div>
-            {showModal && selectedVehicle && (
-                <VehicleModal vehicle={selectedVehicle} closeModal={closeModal} />
-            )}
         </div>
     );
 };
 
-const VehicleCategory = ({ vehicles, handleCreateOrder, openModal }) => {
+
+
+
+const VehicleCategory = ({ vehicles, handleCreateOrder, openModal, focusedVehicleId }) => {
     return (
         <div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {vehicles.map((vehicle) => (
-                    <VehicleCard key={vehicle.vehicle_id} vehicle={vehicle} handleCreateOrder={handleCreateOrder} openModal={openModal} />
+                    <VehicleCard
+                        key={vehicle.vehicle_id}
+                        vehicle={vehicle}
+                        handleCreateOrder={handleCreateOrder}
+                        openModal={openModal}
+                        focusedVehicleId={focusedVehicleId}
+                    />
                 ))}
             </div>
         </div>
     );
 };
 
-const VehicleCard = ({ vehicle, handleCreateOrder, openModal }) => {
+const VehicleCard = ({ vehicle, handleCreateOrder, openModal, focusedVehicleId }) => {
     const formatPrice = (price) => `Rs. ${Math.round(price).toLocaleString()}`;
+    const focused = vehicle.vehicle_id === focusedVehicleId;
 
     return (
-        <div className="relative border rounded-lg shadow-lg p-4">
+        <div className={`relative border rounded-lg shadow-lg p-4 ${focused ? 'border-blue-500' : ''}`}>
             <button onClick={() => openModal(vehicle)} className="absolute top-2 right-2 text-blue-500 hover:text-blue-700">
                 <InformationCircleIcon className="w-6 h-6" />
             </button>
@@ -167,61 +261,87 @@ const VehicleCard = ({ vehicle, handleCreateOrder, openModal }) => {
                     {vehicle.transmission}
                 </span>
             </div>
-            <img src={`http://localhost:5000/${vehicle.image_front}`} alt={vehicle.vehicle_name} className="w-full h-48 object-cover rounded-md" />
+            <img src={`http://localhost:5000/${vehicle.image_front}`} alt={vehicle.vehicle_name} className="w-full h-48 object-contain rounded-md" />
             <div className="mt-4">
                 <p className="font-medium text-red-800"><strong>{vehicle.vehicle_name}, {vehicle.model}</strong></p>
                 <p className="text-gray-700 font-semibold">
                     Price:
                     {vehicle.discounted_price && vehicle.discounted_price < vehicle.final_price ? (
                         <>
-                            <span className="line-through mr-2 text-red-500">{formatPrice(vehicle.final_price)}</span>
+                            <span className="line-through mr-2">{formatPrice(vehicle.final_price)}</span>
                             <span className="text-green-600">{formatPrice(vehicle.discounted_price)}</span>
                         </>
                     ) : (
-                        <span className="text-green-600">{formatPrice(vehicle.final_price)}</span>
+                        <span>{formatPrice(vehicle.final_price)}</span>
                     )}
                 </p>
+                <button
+                    onClick={() => handleCreateOrder(vehicle.vehicle_id)}
+                    className={`w-full px-4 py-2 mt-4 text-white font-semibold rounded-lg ${vehicle.availability === 0 ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600'}`}
+                    disabled={vehicle.availability === 0}
+                >
+                    {vehicle.availability === 0 ? 'Unavailable' : 'Book Now'}
+                </button>
             </div>
-            <button
-                onClick={() => handleCreateOrder(vehicle.vehicle_id)} 
-                className={`mt-4 px-4 py-2 bg-blue-500 text-white rounded w-full flex justify-center items-center ${vehicle.availability === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
-                disabled={vehicle.availability === 0}
-            >
-                Book Now
-            </button>
         </div>
     );
 };
 
-const CategoryButton = ({ selected, onClick, children }) => (
-    <button
-        onClick={onClick}
-        className={`px-4 py-2 rounded-md text-sm font-medium ${selected ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-800'}`}
-    >
-        {children}
-    </button>
-);
+const CategoryButton = ({ selected, onClick, children }) => {
+    return (
+        <button
+            onClick={onClick}
+            className={`px-4 py-2 rounded-md ${selected ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-800'} transition`}
+        >
+            {children}
+        </button>
+    );
+};
 
 const VehicleModal = ({ vehicle, closeModal }) => {
+    const formatPrice = (price) => `Rs. ${Math.round(price).toLocaleString()}`;
+
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-            <div className="bg-white p-6 rounded-lg shadow-lg max-w-lg w-full">
-                <button onClick={closeModal} className="absolute top-2 right-2 text-gray-500 hover:text-gray-700">
-                    X
+            <div className="bg-white p-6 rounded-lg shadow-lg max-w-lg w-full relative">
+            <button
+                    onClick={closeModal}
+                    className="absolute top-3 right-3 text-red-500 hover:text-red-700 focus:outline-none"
+                    aria-label="Close Modal"
+                >
+                    ✕
                 </button>
-                <div className="space-y-4">
-                    <h3 className="text-xl font-semibold">{vehicle.vehicle_name}</h3>
-                    <p>{vehicle.category_name}</p>
-                    <p>Model: {vehicle.model}</p>
-                    <p>CC: {vehicle.cc}</p>
-                    <p>Color: {vehicle.color}</p>
-                    <p>Fuel Type: {vehicle.fuel_type}</p>
-                    <p>Transmission: {vehicle.transmission}</p>
-                    <p className="text-red-500">{vehicle.availability === 0 ? 'Unavailable' : 'Available'}</p>
-                    <p className="font-medium text-gray-700">Price: {vehicle.final_price}</p>
-                </div>
+
+                <p className="font-semibold text-lg">{vehicle.vehicle_name},{vehicle.model}</p>
+             
+                <p className="font-medium text-gray-700">Fuel Type: {vehicle.fuel_type}</p>
+                <p className="font-medium text-gray-700">Transmission: {vehicle.transmission}</p>
+                
+                <p className="font-medium text-gray-600">CC: {vehicle.cc}</p>
+                <p className="font-medium text-gray-600">Color: {vehicle.color}</p>
+               
+                <p className="text-gray-700 font-semibold">
+                    Price:
+                    {vehicle.discounted_price && vehicle.discounted_price < vehicle.final_price ? (
+                        <>
+                            <span className="line-through mr-2">{formatPrice(vehicle.final_price)}</span>
+                            <span className="text-black">{formatPrice(vehicle.discounted_price)}</span>
+                        </>
+                    ) : (
+                        <span>{formatPrice(vehicle.final_price)}</span>
+                    )}
+                </p>
+                <p
+                    className={`font-medium ${vehicle.availability === 0 ? "text-red-500" : "text-green-500"
+                        }`}
+                >
+                    {vehicle.availability === 0 ? "Unavailable" : "Available"}
+                </p>
             </div>
+
+
         </div>
+
     );
 };
 

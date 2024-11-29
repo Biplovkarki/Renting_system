@@ -175,7 +175,7 @@ const RentalForm = ({ userId, vehicleId, orderId, onSubmit, onClose }) => {
     setSelectedPayment(paymentMethod);
     console.log(`Selected Payment Method: ${paymentMethod}`);
     setModalOpen(false); // Close modal after selection
-  
+
     if (paymentMethod === "COD") {
       try {
         // Handle COD payment (already implemented)
@@ -203,15 +203,15 @@ const RentalForm = ({ userId, vehicleId, orderId, onSubmit, onClose }) => {
             headers: { Authorization: `Bearer ${token}` },
           }
         );
-  
+
         const khaltiPaymentUrl = response.data.payment_url; // Assume the URL for payment is returned
-  
+
         // Redirect user to Khalti payment gateway (or use Khalti's SDK for modal integration)
         window.location.href = khaltiPaymentUrl;
-  
+
         setMessage("Redirecting to Khalti for payment...");
         setMessageType("success");
-  
+
       } catch (error) {
         setMessage(error.response?.data?.message || "Error processing Khalti payment.");
         setMessageType("error"); // Set message type to error
@@ -219,7 +219,7 @@ const RentalForm = ({ userId, vehicleId, orderId, onSubmit, onClose }) => {
       }
     }
   };
-  
+
 
   return (
     <div className="max-w-lg mx-auto p-6 bg-white rounded-lg shadow-lg">
@@ -260,7 +260,13 @@ const RentalForm = ({ userId, vehicleId, orderId, onSubmit, onClose }) => {
         {vehicle && (
           <div className="p-4 bg-gray-100 rounded-lg">
             <p className="text-sm">Vehicle: {vehicle.vehicle_name}</p>
-            <p className="text-sm">Price per Day: Rs. {formatPrice(vehicle.final_price)}</p>
+            <p className="text-sm">
+              Price per Day: Rs.{" "}
+              {vehicle.discounted_price && vehicle.discounted_price < vehicle.final_price
+                ? formatPrice(vehicle.discounted_price)  // Show discounted price
+                : formatPrice(vehicle.final_price)}   
+                
+            </p>
             <p className="text-sm">Total Rental Days: {rentalDays}</p>
             <p className="text-sm font-bold">Total Amount: Rs. {formatPrice(calculateTotalPrice())}</p>
           </div>

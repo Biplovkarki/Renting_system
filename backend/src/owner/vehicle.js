@@ -1,5 +1,5 @@
 import express from "express";
-import { db } from "../db.js";  
+import { db } from "../db.js";
 import fs from "fs";
 import multer from "multer";
 import { verifyJwt } from "./jwtOwner.js";
@@ -53,8 +53,8 @@ vehicleRouter.post('/add-vehicle', verifyJwt, upload.fields([
         final_price,
         discount_id,
         terms,
-        rent_start_date,
-        rent_end_date,
+        // rent_start_date,
+        // rent_end_date,
         status = 'pending'
     } = req.body;
 
@@ -76,6 +76,14 @@ vehicleRouter.post('/add-vehicle', verifyJwt, upload.fields([
     const identity_image = req.files?.identity_image?.[0]?.path ?? null;
 
     try {
+        // Check if category exists before proceeding
+        const [categoryCheck] = await db.promise().query(`
+            SELECT 1 FROM categories WHERE category_id = ?`, [category_id]);
+
+        if (!categoryCheck.length) {
+            return res.status(400).json({ message: "Invalid category ID" });
+        }
+
         // Retrieve price information for the category
         const [priceRow] = await db.promise().query(`
             SELECT price_id, min_price, max_price 
@@ -98,7 +106,7 @@ vehicleRouter.post('/add-vehicle', verifyJwt, upload.fields([
         }
 
         // Determine discounted price
-        let discounted_price = final_price;
+        let discounted_price = finalPriceNum;
 
         if (discount_id) {
             // If specific discount is provided, use that
@@ -108,19 +116,19 @@ vehicleRouter.post('/add-vehicle', verifyJwt, upload.fields([
                 WHERE discount_id = ?`, [discount_id]);
 
             if (discountRow.length > 0) {
-                discounted_price -= (final_price * discountRow[0].discount_percentage) / 100;
+                discounted_price -= (finalPriceNum * discountRow[0].discount_percentage) / 100;
             } else {
                 return res.status(400).json({ message: "Invalid discount ID" });
             }
         } else {
-            // Check for category discount if no specific discount provided
+            // Apply category discount if no specific discount_id is provided
             const [categoryDiscountRow] = await db.promise().query(`
                 SELECT discount_percentage 
                 FROM discounts 
                 WHERE category_id = ?`, [category_id]);
 
             if (categoryDiscountRow.length > 0) {
-                discounted_price -= (final_price * categoryDiscountRow[0].discount_percentage) / 100;
+                discounted_price -= (finalPriceNum * categoryDiscountRow[0].discount_percentage) / 100;
             }
         }
 
@@ -149,10 +157,10 @@ vehicleRouter.post('/add-vehicle', verifyJwt, upload.fields([
         // Insert data into vehicle_status table including rent start and end dates, status, terms, and default availability
         const statusSql = `
             INSERT INTO vehicle_status 
-            (vehicle_id, price_id, final_price, discounted_price, status, terms, discount_id, rent_start_date, rent_end_date, availability)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (vehicle_id, price_id, final_price, discounted_price, status, terms, discount_id,  availability)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         `;
-        const statusValues = [vehicle_id, price_id, final_price, discounted_price, status, terms, discount_id, rent_start_date, rent_end_date, 1]; // Default availability to 1
+        const statusValues = [vehicle_id, price_id, finalPriceNum, discounted_price, status, terms, discount_id,  1]; // Default availability to 1
         await db.promise().query(statusSql, statusValues);
 
         res.status(201).json({ message: 'Vehicle, vehicle document, and vehicle status added successfully' });

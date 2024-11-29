@@ -22,8 +22,9 @@ const VehicleForm = () => {
         final_price: '',
         discounted_price: '',
         terms: 0,
-        rent_start_date: '',
-        rent_end_date: '',
+        // rent_start_date: '',
+        // rent_end_date: '',
+        
     });
 
     const [discountPercentage, setDiscountPercentage] = useState(null);
@@ -98,7 +99,7 @@ const VehicleForm = () => {
             ...prevData,
             [name]: type === "checkbox" ? (checked ? 1 : 0) : value,
         }));
-
+    
         if (name === 'category_id' && value) {
             try {
                 const token = localStorage.getItem('token');
@@ -107,12 +108,17 @@ const VehicleForm = () => {
                 });
                 const activeDiscount = discountResponse.data;
                 setDiscountPercentage(activeDiscount?.discount_percentage || null);
+    
+                // Set the discount_id in the form data
+                setFormData(prev => ({ ...prev, discount_id: activeDiscount?.discount_id || null }));
             } catch (error) {
                 console.error('Error fetching discount:', error);
                 setDiscountPercentage(null);
+                setFormData(prev => ({ ...prev, discount_id: null }));
             }
         }
     };
+    
 
     const handleFileChange = (e) => {
         const { name, files } = e.target;
@@ -129,20 +135,20 @@ const VehicleForm = () => {
         setErrorMessage('');
         setSuccessMessage('');
         setLoading(true); // Set loading state
-
+    
         const token = localStorage.getItem('token');
         const formDataToSubmit = new FormData();
         for (const key in formData) formDataToSubmit.append(key, formData[key]);
         for (const key in files) if (files[key]) formDataToSubmit.append(key, files[key]);
-
+    
         try {
             const response = await axios.post('http://localhost:5000/vehicle/add-vehicle', formDataToSubmit, {
                 headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` }
             });
             setSuccessMessage('Vehicle registered successfully!');
             console.log(response.data);
-
-            // Resetting form state
+    
+            // Reset form data
             setFormData({
                 owner_id: '',
                 category_id: '',
@@ -161,9 +167,10 @@ const VehicleForm = () => {
                 final_price: '',
                 discounted_price: '',
                 terms: 0,
-                rent_start_date: '',
-                rent_end_date: '',
+                // rent_start_date: '',
+                // rent_end_date: '',
                 availability: 1, 
+                discount_id: formData.discount_id,
             });
             setFiles({
                 image_right: null,
@@ -173,6 +180,12 @@ const VehicleForm = () => {
                 bluebook_image: null,
                 identity_image: null,
             });
+    
+            window.alert("Vehicle registered successfully!");
+
+            // Reload the page after the alert is acknowledged
+            window.location.reload();
+
         } catch (error) {
             setErrorMessage('Error adding vehicle: ' + (error.response?.data?.message || error.message));
             console.error('Error adding vehicle:', error.response?.data || error.message);
@@ -180,6 +193,7 @@ const VehicleForm = () => {
             setLoading(false); // Reset loading state
         }
     };
+    
 
     console.log('Form Data:', formData);
 
@@ -370,7 +384,7 @@ const VehicleForm = () => {
                             />
                         </label>
 
-                        <label className="flex flex-col">
+                        {/* <label className="flex flex-col">
                             <span className="font-medium text-gray-700">Rent Start Date</span>
                             <input
                                 type="date"
@@ -392,7 +406,7 @@ const VehicleForm = () => {
                                 className="mt-1 border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 required
                             />
-                        </label>
+                        </label> */}
                     </div>
                 </fieldset>
 

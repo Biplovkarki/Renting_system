@@ -55,7 +55,7 @@ const RegisterOwner = () => {
     
     // Validate username
     if (value.length > 15) {
-      setError("Username must not exceed 15 characters.");
+      setError("ownername must not exceed 15 characters.");
     } else if (!validateUsername(value)) {
       setError("Username must start with a capital letter and may contain up to two names.");
     } else {
@@ -166,7 +166,7 @@ const RegisterOwner = () => {
     }
 
     try {
-      const response = await axios.post('http://localhost:5000/user/register', {
+      const response = await axios.post('http://localhost:5000/owners/register', {
         ownername: username, // Use username instead of ownername
         email,
         password,

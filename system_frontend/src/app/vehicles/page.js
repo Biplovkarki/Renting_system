@@ -1,4 +1,5 @@
 import Navbar from "../homeComponent/navbar";
+
 import VehicleList from "./view";
 
 export default function VehiclePage(){
@@ -7,6 +8,7 @@ export default function VehiclePage(){
         <>
         <div>
             <Navbar/>
+            
             <VehicleList/>
         </div>
 

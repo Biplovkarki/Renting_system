@@ -109,33 +109,59 @@ routerUser.post('/login', async (req, res, next) => {
 });
 
 // Me route
-routerUser.get('/me', verifyUserJwt, async (req, res, next) => {
-    const userId = req.user.id;
-    try {
-        const user = await dbQuery('SELECT * FROM users WHERE User_id = ?', [userId]);
-        if (user.length === 0) {
-            return res.status(404).json({ message: 'User not found.' });
-        }
-        res.json({
-            userID: user[0].User_id,
-            username: user[0].username,
-            user_email: user[0].user_email,
-            user_phone: user[0].user_phone,
-            user_image: user[0].user_image || '',
-            user_address: user[0].user_address || '',
-            created_at: user[0].created_at,
-        });
-    } catch (error) {
-        next(error);
-    }
-});
+// routerUser.get('/me', verifyUserJwt, async (req, res, next) => {
+//     const userId = req.user.id;
+//     try {
+//         const user = await dbQuery('SELECT * FROM users WHERE User_id = ?', [userId]);
+//         if (user.length === 0) {
+//             return res.status(404).json({ message: 'User not found.' });
+//         }
+//         res.json({
+//             userID: user[0].User_id,
+//             username: user[0].username,
+//             user_email: user[0].user_email,
+//             user_phone: user[0].user_phone,
+//             user_image: user[0].user_image || '',
+//             user_address: user[0].user_address || '',
+//             created_at: user[0].created_at,
+//         });
+//     } catch (error) {
+//         next(error);
+//     }
+// });
 
 
 // Profile route (same as /me for simplicity)
-routerUser.get('/profile', verifyUserJwt, async (req, res, next) => {
-    //This route is redundant and identical to /me.  Consider removing it.
-    return routerUser.get('/me')(req, res, next);
+routerUser.get('/profile', verifyUserJwt, async (req, res) => {
+    const userId = req.user.id;
+
+    console.log('Request user ID:', userId); // Log the owner ID from the request
+
+    try {
+        const [rows] = await db.promise().query('SELECT * FROM users WHERE User_id = ?', [userId]);
+
+        if (rows.length === 0) {
+            return res.status(404).json({ message: 'User not found.' });
+        }
+
+        const user = rows[0];
+        res.json({
+            userID: user.User_id,
+            username: user.username,
+            user_email: user.user_email,
+            user_phone: user.user_phone,
+            user_image: user.user_image || '',
+            user_address: user.user_address || '',
+            created_at: user.created_at,
+        });
+        console.log("user details:",user)
+    } catch (error) {
+        console.error('Error fetching owner profile:', error);
+        res.status(500).json({ message: 'Internal server error.' });
+    }
+   
 });
+
 
 // Update Profile route
 routerUser.put('/update', verifyUserJwt, async (req, res, next) => {
@@ -157,6 +183,31 @@ routerUser.put('/update', verifyUserJwt, async (req, res, next) => {
         next(error);
     }
 });
+routerUser.get('/image/:userId', async (req, res, next) => {
+    const { userId } = req.params;
+
+    try {
+        const user = await dbQuery('SELECT user_image FROM users WHERE User_id = ?', [userId]);
+
+        if (user.length === 0 || !user[0].user_image) {
+            return res.status(404).json({ message: 'User image not found.' });
+        }
+
+        // File path for the user's image
+        const imagePath = path.join(process.cwd(), 'uploads/user', user[0].user_image);
+
+        // Check if the file exists and send it
+        res.sendFile(imagePath, (err) => {
+            if (err) {
+                console.error('Error sending file:', err);
+                res.status(500).json({ message: 'Error fetching the image.' });
+            }
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
 
 
 // Logout route

@@ -21,6 +21,8 @@ import routerRate from './rate/rate.js';
 import AverageRate from './rate/fetchAverage.js';
 import commentRouter from './rate/comment.js';
 import khaliRoutes from './payment/khalti.js';
+import search from './algorithms/search.js';
+import sortRouter from './algorithms/sorting.js';
 //import orderRouter from './order/order.js';
 // import vehicleRouter from './owner/vehicle.js';
 
@@ -61,6 +63,8 @@ app.use('/rating',routerRate);
 app.use('/Average',AverageRate);
 app.use('/comments',commentRouter);
 app.use('/khalti',khaliRoutes);
+app.use('/search',search);
+app.use('/sort',sortRouter);
 //app.use('/order',orderRouter);
 
 const PORT = process.env.PORT || 5000;

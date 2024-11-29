@@ -1,166 +1,212 @@
 import express from 'express';
-import { db } from '../db.js';  // Assuming db.js is the module where your MySQL connection is set up
-import { verifyUserJwt } from '../user/jwtUser.js'; // Assuming this is your JWT user verification middleware
-import dotenv from 'dotenv';
 import axios from 'axios';
-import moment from 'moment'; // For date manipulation
+import moment from 'moment';
+import { db } from '../db.js'; // Database connection
+import { verifyUserJwt } from '../user/jwtUser.js'; // JWT middleware
+import dotenv from 'dotenv';
 
 dotenv.config();
 
 const khaliRoutes = express.Router();
 
-// Khalti Payment Initialization
-async function initializeKhaltiPayment({
-  amount,
-  purchase_order_id,
-  purchase_order_name,
-  return_url,
-}) {
-  try {
-    const headers = {
-      Authorization: `Key ${process.env.KHALTI_SECRET_KEY}`,
-      'Content-Type': 'application/json',
-    };
-
-    const body = {
-      amount,  // amount in paisa
-      purchase_order_id,
-      purchase_order_name,
-      return_url,
-      website_url: process.env.WEBSITE_URL,
-    };
-
-    console.log('Initializing Khalti payment with amount:', amount);
-
-    const response = await axios.post(
-      `${process.env.KHALTI_GATEWAY_URL}/epayment/initiate/`,
-      body,
-      { headers }
-    );
-
-    return response.data; // This will return the payment URL to redirect the user
-  } catch (error) {
-    console.error('Error initializing Khalti payment:', error);
-    throw error;
-  }
-}
-
-// Khalti Payment Verification
-async function verifyKhaltiPayment(pidx) {
-  try {
-    const headers = {
-      Authorization: `Key ${process.env.KHALTI_SECRET_KEY}`,
-      'Content-Type': 'application/json',
-    };
-
-    const body = { pidx };
-    const response = await axios.post(
-      `${process.env.KHALTI_GATEWAY_URL}/epayment/lookup/`,
-      body,
-      { headers }
-    );
-
-    return response.data; // This will contain the payment status and transaction details
-  } catch (error) {
-    console.error('Error verifying Khalti payment:', error);
-    throw error;
-  }
-}
-
-// Route to initialize the payment (user sends payment request)
+// Initialize Payment
 khaliRoutes.post('/initialize-khali/:order_id', verifyUserJwt, async (req, res) => {
-    try {
-      const { order_id } = req.params;
-  
-      //Retrieve order details (using try...catch for error handling)
-      const [order] = await db.promise().query(
-        `SELECT 
+  try {
+    const { order_id } = req.params;
+
+    // Retrieve order details
+    const [order] = await db.promise().query(
+      `SELECT 
           orders.*, 
           vehicle.vehicle_name, 
-          vehicle.model, 
           users.username, 
           users.user_email, 
           users.user_phone 
-        FROM 
+       FROM 
           orders 
-        JOIN vehicle ON orders.vehicle_id = vehicle.vehicle_id 
-        JOIN users ON orders.user_id = users.user_id 
-        WHERE 
+       JOIN vehicle ON orders.vehicle_id = vehicle.vehicle_id 
+       JOIN users ON orders.user_id = users.user_id 
+       WHERE 
           orders.order_id = ?`,
-        [order_id]
-      );
-  
-      if (!order || order.length === 0) {
-        return res.status(404).json({ message: 'Order not found' });
+      [order_id]
+    );
+    const grand_total = order[0].grand_total;
+    if (!order || order.length === 0) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    if (isNaN(grand_total) || grand_total <= 0) {
+      return res.status(400).json({ message: 'Invalid grand total' });
+    }
+    
+    // Convert grand_total to paisa (integer)
+    const amountInPaisa = Math.round(grand_total * 100); 
+    // Khalti Payment Initialization
+    const paymentRequestBody = {
+      return_url: `${process.env.FRONTEND_URL}/successpage`, // URL for success redirection
+      website_url: process.env.FRONTEND_URL, // Your website URL
+      amount: amountInPaisa, // Amount in paisa
+      purchase_order_id: order_id, // Order ID
+      purchase_order_name: order[0].vehicle_name, // Order name
+      customer_info: {
+        name: order[0].username,
+        email: order[0].user_email,
+        phone: order[0].user_phone,
+      },
+    };
+
+    const paymentResponse = await axios.post(
+      `${process.env.KHALTI_GATEWAY_URL}/epayment/initiate/`,
+      paymentRequestBody,
+      {
+        headers: {
+          Authorization: `Key ${process.env.KHALTI_SECRET_KEY}`,
+          'Content-Type': 'application/json',
+        },
       }
-  
-      const grand_total = parseFloat(order[0].grand_total);
-  
-      if (isNaN(grand_total) || grand_total <= 0) {
-        return res.status(400).json({ message: 'Invalid grand total' });
+    );
+
+    // Update order status
+    await db.promise().query(
+      `UPDATE orders 
+       SET transaction_uuid = ?, 
+           paid_status = ?, 
+           status = ?, 
+           payment_method = ?, 
+           updated_at = ? 
+       WHERE order_id = ?`,
+      [
+        paymentResponse.data.pidx, // Unique transaction ID
+        'payment_pending',
+        'payment_pending',
+        'khalti',
+        moment().format('YYYY-MM-DD HH:mm:ss'),
+        order_id,
+      ]
+    );
+
+    res.json({
+      success: true,
+      payment_url: paymentResponse.data.payment_url, // Khalti's payment URL
+      order_id,
+    });
+  } catch (error) {
+    console.error('Error in /initialize-khali route:', error.response?.data || error.message);
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
+  }
+});
+khaliRoutes.post('/complete-khali-payment', async (req, res) => {
+  console.log('Received request body:', req.body);
+  const { pidx, order_id } = req.body;
+
+  if (!pidx || !order_id) {
+    console.error('Missing pidx or order_id');
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Payment ID (pidx) and order ID are required',
+      receivedData: req.body
+    });
+  }
+
+  try {
+    const verifyResponse = await axios.post(
+      `${process.env.KHALTI_GATEWAY_URL}/epayment/lookup/`,
+      { pidx },
+      {
+        headers: {
+          Authorization: `Key ${process.env.KHALTI_SECRET_KEY}`,
+          'Content-Type': 'application/json',
+        },
       }
-  
-      const paymentResponse = await initializeKhaltiPayment({
-        amount: grand_total * 100,
-        purchase_order_id: order_id,
-        purchase_order_name: order[0].vehicle_name,
-        return_url: `${process.env.BACKEND_URL}/khalti/complete-khalti-payment`,
-      });
-  
-      // Update order status - corrected
-      await db.promise().query(
-        'UPDATE orders SET transaction_uuid = ?, paid_status = ?, status = ?, payment_method = ?, updated_at = ? WHERE order_id = ?',
+    );
+
+    console.log('Verify response from Khalti:', verifyResponse.data);
+
+    const paymentDetails = verifyResponse.data;
+
+    // Directly check payment status
+    console.log('Payment Status:', paymentDetails.status);
+
+    if (paymentDetails.status === 'Completed') {
+      // Handle successful payment (same as before)
+      const [updateResult] = await db.promise().query(
+        `UPDATE orders 
+         SET 
+           transaction_uuid = ?, 
+           paid_status = ?, 
+           status = ?, 
+           payment_method = ?, 
+           updated_at = ? 
+         WHERE order_id = ?`,
         [
-          paymentResponse.transaction_id,
-          'payment_pending', // Corrected status
-          'payment_pending', //Corrected status
-          'khalti',
+          paymentDetails.transaction_id,
+          'paid',
+          'completed', 
+          'khalti', 
           moment().format('YYYY-MM-DD HH:mm:ss'),
           order_id,
         ]
       );
-  
-      res.json({ success: true, payment_url: paymentResponse.payment_url, order_id });
-    } catch (error) {
-      console.error('Error in /initialize-khali route:', error);
-      res.status(500).json({ success: false, error: 'Server error' }); // Generic error message for security
-    }
-  });
-  
-  khaliRoutes.get('/complete-khalti-payment', async (req, res) => {
-    const { transaction_id } = req.query; // Use transaction_id only
-  
-    try {
-      const paymentInfo = await verifyKhaltiPayment(transaction_id);
-  
-  
-      if (paymentInfo.status !== 'Completed') {
-        return res.status(400).json({ message: 'Payment verification failed' });
-      }
-  
-      const [order] = await db.promise().query('SELECT * FROM orders WHERE order_id = ?', [req.query.purchase_order_id]);
-  
-      if (!order) {
-        return res.status(404).json({ message: 'Order not found' });
-      }
-  
-      await db.promise().query(
-        'UPDATE orders SET status = ?, transaction_uuid = ?, paid_status = ?, delivered_status = ?, payment_method = ?, updated_at = ? WHERE order_id = ?',
-        [
-          'completed',
-          transaction_id,
-          'paid',
-          'not_delivered',
-          'Khalti',
-          moment().format('YYYY-MM-DD HH:mm:ss'),
-          req.query.purchase_order_id,
-        ]
+      console.log('Order status updated:', updateResult);
+
+      // Fetch Vehicle ID
+      const [vehicleResult] = await db.promise().query(
+        `SELECT vehicle_id FROM orders WHERE order_id = ?`,
+        [order_id]
       );
-  
-      res.json({ success: true, message: 'Payment successful, order updated' });
-    } catch (error) {
-      console.error('Error in /complete-khalti-payment callback:', error);
-      res.status(500).json({ success: false, message: 'Payment verification failed' });
+      const vehicleId = vehicleResult[0].vehicle_id;
+      console.log('Fetched Vehicle ID:', vehicleId);
+
+      // Update availability in vehicle_status table to 1
+      const [vehicleStatusUpdateResult] = await db.promise().query(
+        `UPDATE vehicle_status 
+         SET availability = 1
+         WHERE vehicle_id = ?`,
+        [ vehicleId]
+      );
+      console.log('Vehicle availability updated:', vehicleStatusUpdateResult);
+
+      res.json({ 
+        success: true, 
+        message: 'Payment verified successfully', 
+        vehicleId, 
+      });
+    } else if (paymentDetails.status === 'Cancelled' || paymentDetails.status === 'Failed') {
+      // Handle cancelled or failed payment
+      console.log('Payment was cancelled or failed');
+      
+      // Remove transaction_uuid by setting it to null
+      await db.promise().query(
+        `UPDATE orders 
+         SET 
+           transaction_uuid = NULL, 
+           paid_status = ?, 
+           status = ?, 
+           updated_at = ? 
+         WHERE order_id = ?`,
+        ['payment_failed', 'cancelled', moment().format('YYYY-MM-DD HH:mm:ss'), order_id]
+      );
+
+      res.status(400).json({ 
+        success: false, 
+        message: 'Payment was cancelled or failed', 
+        paymentDetails 
+      });
+    } else {
+      res.status(400).json({ 
+        success: false, 
+        message: 'Payment not completed', 
+        paymentDetails 
+      });
     }
-  });
+  } catch (error) {
+    console.error('Error in /complete-khali-payment route:', error.response?.data || error.message);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error', 
+      error: error.message 
+    });
+  }
+});
+
 export default khaliRoutes;

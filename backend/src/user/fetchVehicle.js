@@ -21,7 +21,7 @@ fetchRoutes.get('/vehicle', async (req, res) => {
                 v.image_left,
                 v.image_back,
                 v.image_front,
-                
+                vd.registration_number	,
                 c.category_name,
                 
                 vs.final_price,
@@ -34,8 +34,10 @@ fetchRoutes.get('/vehicle', async (req, res) => {
                 vs.rent_start_date,
                 vs.rent_end_date,
                 vs.terms
+               
             FROM vehicle v
             LEFT JOIN vehicle_status vs ON v.vehicle_id = vs.vehicle_id
+            LEFT JOIN vehicle_document vd ON v.vehicle_id = vd.vehicle_id
             LEFT JOIN categories c ON v.category_id = c.category_id
             LEFT JOIN discounts d ON c.category_id = d.category_id  -- Join the discounts table
             WHERE vs.status = 'approve'

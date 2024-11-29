@@ -64,7 +64,7 @@ export default function Navbar() {
       <section className="hidden md:flex flex-row gap-4 mx-1 items-center">
         {isLoggedIn ? (
           <>
-            <Link href="/user/profile">
+            <Link href="/user/dashboard">
               <button className="border-2 w-20 h-14 bg-black text-white rounded-xl hover:bg-green-500">Profile</button>
             </Link>
             <button className="border-2 w-20 h-14 bg-red-500 text-white rounded-xl hover:bg-red-600" onClick={handleLogout}>Logout</button>
