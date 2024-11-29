@@ -1,7 +1,8 @@
-"use client"
+"use client";
 import { useEffect, useState } from "react";
 import { jwtDecode } from "jwt-decode";
 import { UserIcon } from "@heroicons/react/20/solid";
+import { Dialog } from "@headlessui/react";
 import { useRouter } from "next/navigation";
 
 const ProfileUser = () => {
@@ -14,12 +15,11 @@ const ProfileUser = () => {
     const [isSaving, setIsSaving] = useState(false);
     const [userImage, setUserImage] = useState(''); // State to store image URL
     const [isLoading, setIsLoading] = useState(true);
+    const [isModalOpen, setIsModalOpen] = useState(false); // For image modal
     const router = useRouter();
 
-    // Fetch user profile on component mount
     useEffect(() => {
         const token = localStorage.getItem('userToken');
-
         if (token) {
             try {
                 const decoded = jwtDecode(token);
@@ -30,7 +30,6 @@ const ProfileUser = () => {
                     router.push('/vehicles');
                     return;
                 }
-
                 setUserId(decoded.id);
             } catch (error) {
                 console.error('Error decoding token:', error);
@@ -44,7 +43,6 @@ const ProfileUser = () => {
         }
     }, [router]);
 
-    // Fetch user profile data from API
     useEffect(() => {
         const fetchUserProfile = async () => {
             try {
@@ -60,26 +58,19 @@ const ProfileUser = () => {
                 setUserPhone(data.user_phone);
                 setUserAddress(data.user_address);
                 setUserImage(data.user_image);
-                setIsLoading(false); // Set loading to false after data is fetched
+                setIsLoading(false);
             } catch (error) {
                 console.error('Error fetching profile:', error);
-                setIsLoading(false); // In case of an error, also stop loading
+                setIsLoading(false);
             }
         };
-    
         fetchUserProfile();
-    }, []); 
-    
-    // Empty dependency array to run this only once on component mount
-
-    if (isLoading) {
-        return <div>Loading...</div>;
-    }
+    }, []);
 
     const validateForm = () => {
         const emailPattern = /^(?!.*@.*@)([a-zA-Z0-9._%+-]+@(gmail\.com|icloud\.com|yahoo\.com))$/;
-        const phonePattern = /^9[78]\d{8}$/; // Starts with 97 or 98 and 10 digits in total
-        const namePattern = /^[A-Z][a-z]*(?: [A-Z][a-z]*){1,2}$/; // Firstname [Middlename] Lastname
+        const phonePattern = /^9[78]\d{8}$/;
+        const namePattern = /^[A-Z][a-z]*(?: [A-Z][a-z]*){1,2}$/;
 
         if (!namePattern.test(userName)) {
             setNotification({ message: ' "Firstname [Middlename] Lastname" format required.', type: 'error' });
@@ -96,15 +87,10 @@ const ProfileUser = () => {
         return true;
     };
 
-    // Handle profile update form submission
     const handleSave = async (e) => {
         e.preventDefault();
-        if (!validateForm()) {
-            return; // Stop the form submission if validation fails
-        }
-
+        if (!validateForm()) return;
         setIsSaving(true);
-
         try {
             const response = await fetch('http://localhost:5000/users/update', {
                 method: 'PUT',
@@ -120,26 +106,18 @@ const ProfileUser = () => {
                 }),
             });
 
-            if (!response.ok) {
-                throw new Error('Failed to update profile');
-            }
-
+            if (!response.ok) throw new Error('Failed to update profile');
             setNotification({ message: 'Profile updated successfully!', type: 'success' });
-            setTimeout(() => {
-                setNotification({ message: '', type: '' });
-            }, 3000);
+            setTimeout(() => setNotification({ message: '', type: '' }), 3000);
         } catch (error) {
             console.error('Error updating profile:', error);
             setNotification({ message: 'Error updating profile. Please try again.', type: 'error' });
-            setTimeout(() => {
-                setNotification({ message: '', type: '' });
-            }, 3000);
+            setTimeout(() => setNotification({ message: '', type: '' }), 3000);
         } finally {
             setIsSaving(false);
         }
     };
 
-    // Handle image upload
     const handleImageUpload = async (e) => {
         const formData = new FormData();
         formData.append('UserImage', e.target.files[0]);
@@ -153,107 +131,137 @@ const ProfileUser = () => {
                 body: formData,
             });
 
-            if (!response.ok) {
-                throw new Error('Image upload failed');
-            }
+            if (!response.ok) throw new Error('Image upload failed');
 
             const data = await response.json();
-            setUserImage(data.image); // Update user image state with new image filename
+            setUserImage(data.image);
         } catch (error) {
             console.error('Error uploading image:', error);
             setNotification({ message: 'Error uploading image. Please try again.', type: 'error' });
         }
     };
 
+    if (isLoading) {
+        return <div className="flex items-center justify-center h-screen">Loading...</div>;
+    }
+
     return (
-        <div className="relative w-full p-6 border rounded-lg shadow-lg">
+        <div className="relative max-w-4xl mx-auto p-6 border rounded-lg shadow-lg bg-white">
             {notification.message && (
-                <div className={`fixed top-4 left-1/2 transform -translate-x-1/2 mb-4 p-4 border rounded z-20 ${notification.type === 'error' ? 'bg-red-100 border-red-400 text-red-700' : 'bg-green-100 border-green-400 text-green-700'}`}>
+                <div className={`fixed top-4 left-1/2 transform -translate-x-1/2 mb-4 p-4 rounded z-20 ${notification.type === 'error' ? 'bg-red-100 border-red-400 text-red-700' : 'bg-green-100 border-green-400 text-green-700'}`}>
                     {notification.message}
                 </div>
             )}
-            <div className="flex flex-col items-center">
-                {/* Profile Image at the top in a round format */}
-                {userImage ? (
+           <div className="flex flex-col items-center space-y-4">
+    {userImage ? (
+        <img
+            src={`http://localhost:5000/users/image/${userID}`}
+            alt="User Profile"
+            className="w-32 h-32 rounded-full border-4 border-gray-300 cursor-pointer"
+            onClick={() => setIsModalOpen(true)}
+        />
+    ) : (
+        <div
+            className="w-32 h-32 flex items-center justify-center rounded-full border-4 border-dashed border-gray-300 cursor-pointer bg-gray-50"
+            onClick={() => document.getElementById('image-upload').click()}
+        >
+            <UserIcon className="w-12 h-12 text-gray-500" />
+            <span className="sr-only">Upload Profile Image</span>
+        </div>
+    )}
+
+    <button
+        type="button"
+        onClick={() => document.getElementById('image-upload').click()}
+        className="px-4 py-2 text-sm font-medium text-white bg-blue-500 rounded-md shadow hover:bg-blue-600"
+    >
+        Choose a Profile Picture
+    </button>
+
+    <input
+        id="image-upload"
+        type="file"
+        accept="image/*"
+        onChange={handleImageUpload}
+        className="hidden"
+    />
+</div>
+
+
+            <form onSubmit={handleSave} className="mt-2 space-y-6">
+
+                <div>
+                    <label htmlFor="username" className="block text-gray-700">Username</label>
+                    <input
+                        id="username"
+                        type="text"
+                        value={userName}
+                        onChange={(e) => setUserName(e.target.value)}
+                        className="block w-full px-3 py-2 border rounded-md"
+                    />
+                </div>
+
+                <div>
+                    <label htmlFor="email" className="block text-gray-700">Email</label>
+                    <input
+                        id="email"
+                        type="email"
+                        value={userEmail}
+                        onChange={(e) => setUserEmail(e.target.value)}
+                        className="block w-full px-3 py-2 border rounded-md"
+                    />
+                </div>
+
+                <div>
+                    <label htmlFor="phone" className="block text-gray-700">Phone</label>
+                    <input
+                        id="phone"
+                        type="tel"
+                        value={userPhone}
+                        onChange={(e) => setUserPhone(e.target.value)}
+                        className="block w-full px-3 py-2 border rounded-md"
+                    />
+                </div>
+
+                <div>
+                    <label htmlFor="address" className="block text-gray-700">Address</label>
+                    <input
+                        id="address"
+                        type="text"
+                        value={userAddress}
+                        onChange={(e) => setUserAddress(e.target.value)}
+                        className="block w-full px-3 py-2 border rounded-md"
+                    />
+                </div>
+
+                <button
+                    type="submit"
+                    disabled={isSaving}
+                    className="block w-full py-2 text-white bg-blue-500 rounded-md"
+                >
+                    {isSaving ? 'Saving...' : 'Save Profile'}
+                </button>
+            </form>
+
+            <Dialog
+                open={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50"
+            >
+                <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
                     <img
                         src={`http://localhost:5000/users/image/${userID}`}
-                        alt="User Profile"
-                        className="w-32 h-32 rounded-full border-4 border-gray-300 mb-6"
+                        alt="Profile Full View"
+                        className="w-full max-h-[400px] object-contain rounded-lg"
                     />
-                ) : (
-                    <UserIcon width={80} height={80} className="mb-6 text-gray-500" />
-                )}
-                <h1 className="text-2xl font-bold mb-4">Profile</h1>
-                <form onSubmit={handleSave} className="w-full max-w-lg space-y-6">
-                    {/* Profile Picture Upload */}
-                    <div className="flex flex-col items-center mb-6">
-                        <label htmlFor="image-upload" className="cursor-pointer text-blue-500">
-                            Upload Profile Image
-                        </label>
-                        <input
-                            id="image-upload"
-                            type="file"
-                            accept="image/*"
-                            onChange={handleImageUpload}
-                            className="mt-2"
-                        />
-                    </div>
-
-                    {/* Other fields */}
-                    <div className="mb-4">
-                        <label htmlFor="username" className="block text-gray-700">Username</label>
-                        <input
-                            type="text"
-                            id="username"
-                            value={userName}
-                            onChange={(e) => setUserName(e.target.value)}
-                            className="mt-2 w-full px-3 py-2 border border-gray-300 rounded-md"
-                        />
-                    </div>
-
-                    <div className="mb-4">
-                        <label htmlFor="email" className="block text-gray-700">Email</label>
-                        <input
-                            type="email"
-                            id="email"
-                            value={userEmail}
-                            onChange={(e) => setUserEmail(e.target.value)}
-                            className="mt-2 w-full px-3 py-2 border border-gray-300 rounded-md"
-                        />
-                    </div>
-
-                    <div className="mb-4">
-                        <label htmlFor="phone" className="block text-gray-700">Phone Number</label>
-                        <input
-                            type="tel"
-                            id="phone"
-                            value={userPhone}
-                            onChange={(e) => setUserPhone(e.target.value)}
-                            className="mt-2 w-full px-3 py-2 border border-gray-300 rounded-md"
-                        />
-                    </div>
-
-                    <div className="mb-4">
-                        <label htmlFor="address" className="block text-gray-700">Address</label>
-                        <input
-                            type="text"
-                            id="address"
-                            value={userAddress}
-                            onChange={(e) => setUserAddress(e.target.value)}
-                            className="mt-2 w-full px-3 py-2 border border-gray-300 rounded-md"
-                        />
-                    </div>
-
-                    {/* Save button */}
                     <button
-                        type="submit"
-                        disabled={isSaving}
-                        className="w-full py-2 bg-blue-500 text-white rounded-md"
+                        onClick={() => setIsModalOpen(false)}
+                        className="mt-4 w-full py-2 text-white bg-red-500 rounded-md"
                     >
-                        {isSaving ? 'Saving...' : 'Save Profile'}
+                        Close
                     </button>
-                </form>
-            </div>
+                </div>
+            </Dialog>
         </div>
     );
 };

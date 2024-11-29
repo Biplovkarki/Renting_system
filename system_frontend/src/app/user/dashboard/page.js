@@ -1,53 +1,100 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { jwtDecode } from "jwt-decode";
+import { jwtDecode } from 'jwt-decode';
+import axios from 'axios';
+import RentalOverview from './rental_status';
+import CurrentRentalDetails from './current-rent';
+import UpcomingRentalDetails from './upcoming-rental';
 
 export default function Dashboard() {
     const [isLoading, setIsLoading] = useState(true);
-   
+    const [userDetails, setUserDetails] = useState(null);
+    const [token, setToken] = useState(null);
     const router = useRouter();
 
     useEffect(() => {
-        const token = localStorage.getItem('userToken');
+        const fetchUserDetails = async () => {
+            const userToken = localStorage.getItem('userToken');
+            if (!userToken) {
+                router.push('/vehicles');
+                return;
+            }
 
-        if (!token) {
-            // No token, redirect to login
-            router.push('/vehicles');
-        } else {
             try {
-                const decoded = jwtDecode(token);
-
-                // Check if the token has expired
-                const currentTime = Date.now() / 1000; // Current time in seconds
+                const decoded = jwtDecode(userToken);
+                const currentTime = Date.now() / 1000;
                 if (decoded.exp < currentTime) {
-                    // Token has expired, log the user out
-                    localStorage.removeItem('userToken'); // Clear expired token
-                    alert("Your session has expired. Please log in again."); // Optional alert
-                    router.push('/vehicles'); // Redirect to login
+                    localStorage.removeItem('userToken');
+                    alert("Your session has expired. Please log in again.");
+                    router.push('/vehicles');
                     return;
                 }
 
-             
+                const response = await axios.get(`http://localhost:5000/userDetails/${decoded.id}`, {
+                    headers: { Authorization: `Bearer ${userToken}` },
+                });
+
+                setUserDetails(response.data); // Store user details
+                setToken(userToken); // Set token state
             } catch (error) {
-                console.error('Invalid token:', error);
-                localStorage.removeItem('userToken'); // Clear invalid token
-                alert("Your session is invalid. Please log in again."); // Optional alert
-                router.push('/vehicles'); // Redirect to login
+                console.error('Error fetching user details:', error);
+                alert('Unable to fetch user details. Please try again.');
+                router.push('/vehicles');
             } finally {
-                setIsLoading(false); // Set loading to false regardless of the outcome
+                setIsLoading(false);
             }
-        }
+        };
+
+        fetchUserDetails();
     }, [router]);
 
     if (isLoading) {
-        return <div>Loading...</div>; // Show loading state
+        return <div>Loading...</div>;
     }
 
     return (
-        <div>
-           
-            <p>You are logged in!</p>
+        <div className="flex flex-col items-center justify-start pt-10 text-gray-800 px-6">
+            {userDetails ? (
+                <div className="text-center mb-6">
+                    <h1 className="text-3xl font-semibold mb-2">
+                        Welcome, {userDetails.username}!
+                    </h1>
+                    <p className="text-lg">We're happy to see you again.</p>
+                </div>
+            ) : (
+                <p className="text-xl">User details not available.</p>
+            )}
+
+            {/* Left-aligned rental overview and current rental details in the same row */}
+            <div className="w-full flex justify-between gap-6 mt-6">
+                {userDetails ? (
+                    <>
+                        <div className="w-1/2">
+                            <RentalOverview userId={userDetails.User_id} token={token} />
+                        </div>
+                        <div className="w-1/2">
+                            <CurrentRentalDetails userId={userDetails.User_id} token={token} />
+                        </div>
+                        
+                    </>
+                ) : (
+                    <p>Loading rental details...</p>
+                )}
+            </div>
+            <div className="w-full  mt-6">
+                {userDetails ? (
+                    <>
+                        <div className="">
+                            <UpcomingRentalDetails userId={userDetails.User_id} token={token} />
+                        </div>
+                      
+                        
+                    </>
+                ) : (
+                    <p>Loading rental details...</p>
+                )}
+            </div>
         </div>
     );
 }

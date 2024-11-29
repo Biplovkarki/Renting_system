@@ -208,6 +208,58 @@ routerUser.get('/image/:userId', async (req, res, next) => {
     }
 });
 
+routerUser.put('/change-password', verifyUserJwt, async (req, res) => {
+    const userId = req.user.id;
+    const { currentPassword, newPassword, confirmPassword } = req.body;
+
+    // Input Validation (essential for security)
+    if (!currentPassword || !newPassword || !confirmPassword) {
+        return res.status(400).json({ message: 'All fields are required.' });
+    }
+    if (newPassword !== confirmPassword) {
+        return res.status(400).json({ message: 'New passwords do not match.' });
+    }
+    if (newPassword.length < 8) { // Adjust minimum length as needed
+        return res.status(400).json({ message: 'Password must be at least 8 characters long.' });
+    }
+
+
+    try {
+        console.log('Fetching user with ID:', userId);
+        // Use parameterized query to prevent SQL injection
+        const [userData] = await dbQuery('SELECT user_pass FROM users WHERE user_id = ?', [userId]);
+
+        //Robust error handling for various scenarios
+        if (!userData) {
+            return res.status(404).json({ message: 'User not found.' });
+        }
+
+        const currentHashedPassword = userData.user_pass;
+        const isMatch = await bcrypt.compare(currentPassword, currentHashedPassword);
+
+        if (!isMatch) {
+            return res.status(401).json({ message: 'Incorrect current password.' });
+        }
+
+        // Prevent reusing the same password
+        if (await bcrypt.compare(newPassword, currentHashedPassword)) {
+            return res.status(400).json({ message: 'New password cannot be the same as the current password.' });
+        }
+
+        const hashedNewPassword = await bcrypt.hash(newPassword, 10); // Adjust salt rounds as needed
+
+        // Update password in the database (parameterized query)
+        await dbQuery('UPDATE users SET user_pass = ? WHERE user_id = ?', [hashedNewPassword, userId]);
+
+        res.json({ message: 'Password updated successfully!' });
+
+    } catch (error) {
+        console.error('Error changing password:', error);
+        // Generic error message for security; log details for debugging
+        res.status(500).json({ message: 'Failed to update password. Please try again later.' });
+    }
+});
+
 
 
 // Logout route
@@ -225,5 +277,6 @@ routerUser.use((err, req, res, next) => {
     console.error('Error:', err);
     res.status(500).json({ message: err.message || 'Internal server error' });
 });
+
 
 export default routerUser;
