@@ -15,16 +15,15 @@ const storage = multer.diskStorage({
         }
         cb(null, filepath);
     },
-    filename: function (req, file, cb) {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        const extensionArray = file.originalname.split('.');
-        const extension = extensionArray[extensionArray.length - 1];
-        cb(null, `${file.fieldname}-${uniqueSuffix}.${extension}`);
-    },
+  
 });
 
 const upload = multer({ storage });
 const vehicleRouter = express.Router();
+function roundToNearest10(num) {
+    return Math.round(num / 10) * 10;
+}
+
 
 // API route to add vehicle, vehicle documents, and vehicle status
 vehicleRouter.post('/add-vehicle', verifyJwt, upload.fields([
@@ -53,8 +52,6 @@ vehicleRouter.post('/add-vehicle', verifyJwt, upload.fields([
         final_price,
         discount_id,
         terms,
-        // rent_start_date,
-        // rent_end_date,
         status = 'pending'
     } = req.body;
 
@@ -62,10 +59,11 @@ vehicleRouter.post('/add-vehicle', verifyJwt, upload.fields([
     const validStatuses = ['approve', 'pending', 'reject'];
     const validTransmissions = ['Automatic', 'Manual'];
     const validFuelTypes = ['Petrol', 'Diesel', 'Electric', 'Hybrid'];
-    
+
     if (!validStatuses.includes(status) || !validTransmissions.includes(transmission) || !validFuelTypes.includes(fuel_type)) {
         return res.status(400).json({ message: "Invalid status, transmission, or fuel type value" });
     }
+
 
     // Retrieve file paths if files were uploaded
     const image_right = req.files?.image_right?.[0]?.path ?? null;
@@ -105,8 +103,11 @@ vehicleRouter.post('/add-vehicle', verifyJwt, upload.fields([
             return res.status(400).json({ message: `Final price must be between ${min_price} and ${max_price}` });
         }
 
+        // Round the final price to nearest 10
+        const roundedFinalPrice = roundToNearest10(finalPriceNum);
+
         // Determine discounted price
-        let discounted_price = finalPriceNum;
+        let discountedPrice = roundedFinalPrice;
 
         if (discount_id) {
             // If specific discount is provided, use that
@@ -116,7 +117,8 @@ vehicleRouter.post('/add-vehicle', verifyJwt, upload.fields([
                 WHERE discount_id = ?`, [discount_id]);
 
             if (discountRow.length > 0) {
-                discounted_price -= (finalPriceNum * discountRow[0].discount_percentage) / 100;
+                const discountedAmount = (roundedFinalPrice * discountRow[0].discount_percentage) / 100;
+                discountedPrice = roundToNearest10(roundedFinalPrice - discountedAmount);
             } else {
                 return res.status(400).json({ message: "Invalid discount ID" });
             }
@@ -128,12 +130,13 @@ vehicleRouter.post('/add-vehicle', verifyJwt, upload.fields([
                 WHERE category_id = ?`, [category_id]);
 
             if (categoryDiscountRow.length > 0) {
-                discounted_price -= (finalPriceNum * categoryDiscountRow[0].discount_percentage) / 100;
+                const discountedAmount = (roundedFinalPrice * categoryDiscountRow[0].discount_percentage) / 100;
+                discountedPrice = roundToNearest10(roundedFinalPrice - discountedAmount);
             }
         }
 
         // Safety check to ensure non-negative price
-        if (discounted_price < 0) discounted_price = 0;
+        if (discountedPrice < 0) discountedPrice = 0;
 
         // Insert vehicle data into the vehicle table
         const vehicleSql = `
@@ -157,10 +160,10 @@ vehicleRouter.post('/add-vehicle', verifyJwt, upload.fields([
         // Insert data into vehicle_status table including rent start and end dates, status, terms, and default availability
         const statusSql = `
             INSERT INTO vehicle_status 
-            (vehicle_id, price_id, final_price, discounted_price, status, terms, discount_id,  availability)
+            (vehicle_id, price_id, final_price, discounted_price, status, terms, discount_id, availability)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         `;
-        const statusValues = [vehicle_id, price_id, finalPriceNum, discounted_price, status, terms, discount_id,  1]; // Default availability to 1
+        const statusValues = [vehicle_id, price_id, roundedFinalPrice, discountedPrice, status, terms, discount_id, 1]; // Default availability to 1
         await db.promise().query(statusSql, statusValues);
 
         res.status(201).json({ message: 'Vehicle, vehicle document, and vehicle status added successfully' });
@@ -240,62 +243,6 @@ vehicleRouter.get('/vehicles/:owner_id', verifyJwt, async (req, res) => {
         res.status(500).json({ message: 'Internal server error.' });
     }
 });
-
-
-
-// Route to update only the status and availability fields in vehicle_status
-// vehicleRoutes.put('/vehicles/:vehicle_id', verifyJwtAdmin, async (req, res) => {
-//     const { vehicle_id } = req.params;
-//     const { status, availability } = req.body;
-
-//     // Check if either 'status' or 'availability' field is provided
-//     if (status === undefined && availability === undefined) {
-//         return res.status(400).json({ message: 'Please provide at least one field to update.' });
-//     }
-
-//     try {
-//         // Start transaction
-//         await db.promise().query('START TRANSACTION');
-
-//         // Construct the update query conditionally
-//         let updateQuery = 'UPDATE vehicle_status SET ';
-//         const updateValues = [];
-//         let needsComma = false;
-
-//         if (status !== undefined) {
-//             updateQuery += 'status = ?';
-//             updateValues.push(status);
-//             needsComma = true;
-//         }
-
-//         if (availability !== undefined) {
-//             updateQuery += (needsComma ? ', ' : '') + 'availability = ?';
-//             updateValues.push(availability);
-//         }
-
-//         // Add WHERE clause to target the specific vehicle
-//         updateQuery += ' WHERE vehicle_id = ?';
-//         updateValues.push(vehicle_id);
-
-//         // Log final query and values
-//         console.log('Final Query:', updateQuery);
-//         console.log('Update Values:', updateValues);
-
-//         // Execute the update query
-//         await db.promise().query(updateQuery, updateValues);
-
-//         // Commit the transaction
-//         await db.promise().query('COMMIT');
-//         res.status(200).json({ message: 'Vehicle status and availability updated successfully.' });
-//     } catch (error) {
-//         // Rollback transaction in case of error
-//         await db.promise().query('ROLLBACK');
-//         console.error('Error updating vehicle status:', error);
-//         res.status(500).json({ message: 'Failed to update vehicle status and availability. Please try again later.' });
-//     }
-// });
-
-
 
 
 

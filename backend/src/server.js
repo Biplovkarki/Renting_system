@@ -25,10 +25,13 @@ import search from './algorithms/search.js';
 import sortRouter from './algorithms/sorting.js';
 import userOrder from './user/myorder.js';
 import userDetails from './user/dashboard.js';
+import vehcileUpdate from './owner/update-vehice.js';
+import { detailsForOwner } from './owner/order.js';
+import '././order/job.js';
 //import orderRouter from './order/order.js';
 // import vehicleRouter from './owner/vehicle.js';
 
-dotenv.config();
+dotenv.config ()
 
 const app = express();
 
@@ -69,6 +72,8 @@ app.use('/search',search);
 app.use('/sort',sortRouter);
 app.use('/userOrder',userOrder);
 app.use('/userDetails',userDetails);
+app.use('/update',vehcileUpdate);
+app.use('/details',detailsForOwner);
 //app.use('/order',orderRouter);
 
 const PORT = process.env.PORT || 5000;

@@ -75,15 +75,16 @@ const VehicleForm = () => {
     }, []);
 
     useEffect(() => {
-        if (discountPercentage !== null && formData.final_price) {
-            const discountedPrice = formData.final_price - (formData.final_price * discountPercentage) / 100;
-            // Round to the nearest integer
-            const roundedDiscountedPrice = Math.round(discountedPrice);
-            setFormData(prev => ({ ...prev, discounted_price: roundedDiscountedPrice }));
+        // Ensure both final_price and discountPercentage are valid before calculation
+        if (formData.final_price && discountPercentage !== null) {
+            const discountedPrice = Math.round(parseFloat(formData.final_price) - (parseFloat(formData.final_price) * discountPercentage) / 100);
+            setFormData(prev => ({ ...prev, discounted_price: discountedPrice }));
         } else {
             setFormData(prev => ({ ...prev, discounted_price: '' }));
         }
     }, [discountPercentage, formData.final_price]);
+    
+
 
 
 
@@ -109,9 +110,8 @@ const VehicleForm = () => {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 const activeDiscount = discountResponse.data;
+                console.log('Active Discount:', activeDiscount); // Log discount details
                 setDiscountPercentage(activeDiscount?.discount_percentage || null);
-    
-                // Set the discount_id in the form data
                 setFormData(prev => ({ ...prev, discount_id: activeDiscount?.discount_id || null }));
             } catch (error) {
                 console.error('Error fetching discount:', error);
@@ -120,6 +120,7 @@ const VehicleForm = () => {
             }
         }
     };
+    
     
 
     const handleFileChange = (e) => {

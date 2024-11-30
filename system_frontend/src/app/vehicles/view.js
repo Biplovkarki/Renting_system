@@ -61,7 +61,7 @@ const VehicleList = () => {
             try {
                 setLoading(true);
                 const response = await axios.get('http://localhost:5000/sort/vehicles', {
-                    params: { sortBy, order },
+                    params: { category_id: selectedCategory,sortBy, order},
                 });
                 setVehicles(response.data);
             } catch (error) {
@@ -72,7 +72,7 @@ const VehicleList = () => {
             }
         };
         fetchSortedVehicles();
-    }, [sortBy, order]);
+    }, [ selectedCategory,sortBy, order]);
     console.log("Fetched vehicles:", vehicles);
 
     console.log("SortBy:", sortBy, "Order:", order);

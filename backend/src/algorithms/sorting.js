@@ -32,7 +32,7 @@ function quickSort(arr, key, order = 'asc') {
 }
 
 sortRouter.get('/vehicles', async (req, res) => {
-    const { sortBy, order } = req.query;
+    const { category_id,sortBy, order } = req.query;
     const validSortFields = ['final_price', 'discounted_price', 'cc', 'rating_value', 'availability'];
     const validOrder = ['asc', 'desc'];
 
@@ -46,31 +46,43 @@ sortRouter.get('/vehicles', async (req, res) => {
     }
 
     try {
-        // Fetch vehicles with required fields from multiple tables
-        const [vehicles] = await db.promise().execute(`
-          SELECT
-    v.vehicle_id,
-    v.vehicle_name,
-    v.model,
-    v.cc,
-    v.color,
-    v.transmission,
-    v.fuel_type,
-    vs.final_price,
-    vs.discounted_price,
-    vs.availability,
-    AVG(r.rating_value) AS rating_value,
-    v.image_front
-FROM
-    vehicle AS v
-LEFT JOIN
-    vehicle_status AS vs ON v.vehicle_id = vs.vehicle_id
-LEFT JOIN
-    ratings AS r ON v.vehicle_id = r.vehicle_id  -- Corrected this line
-GROUP BY
-    v.vehicle_id;
+        // Build the SQL query with optional category_id filtering
+        let query = `
+            SELECT
+                v.vehicle_id,
+                v.vehicle_name,
+                v.model,
+                v.cc,
+                v.color,
+                v.transmission,
+                v.fuel_type,
+                vs.final_price,
+                vs.discounted_price,
+                vs.availability,
+                AVG(r.rating_value) AS rating_value,
+                v.image_front
+            FROM
+                vehicle AS v
+            LEFT JOIN
+                vehicle_status AS vs ON v.vehicle_id = vs.vehicle_id
+            LEFT JOIN
+                ratings AS r ON v.vehicle_id = r.vehicle_id
+                LEFT JOIN
+    categories AS c ON v.category_id = c.category_id
+          
+        `;
 
-        `);
+        // Add the category filter if category_id is provided
+        if (category_id) {
+            query += ` WHERE v.category_id = ?`;
+        }
+        query += `
+    GROUP BY
+        v.vehicle_id
+`;
+        
+        // Execute the query with the category filter if needed
+        const [vehicles] = await db.promise().execute(query, category_id ? [category_id] : []);
 
         // Sort the fetched data
         const sortedVehicles = quickSort(vehicles, sortBy, order);
@@ -81,5 +93,6 @@ GROUP BY
         res.status(500).json({ error: "An error occurred while fetching and sorting vehicles." });
     }
 });
+
 
 export default sortRouter;

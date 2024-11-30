@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import Image from 'next/image';  
+import Image from 'next/image';
 import { jwtDecode } from 'jwt-decode';
 import { CameraIcon } from '@heroicons/react/20/solid';
 import { Button, Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
@@ -10,7 +10,7 @@ import axios from 'axios';
 import { Bars2Icon, XMarkIcon } from '@heroicons/react/20/solid'; // Importing the close icon
 
 export default function SidebarOwner() {
- 
+
     const [ownerName, setOwnerName] = useState('');
     const [isOpen, setIsOpen] = useState(false);
     const [isImageOpen, setIsImageOpen] = useState(false);
@@ -41,18 +41,18 @@ export default function SidebarOwner() {
                 'Content-Type': 'multipart/form-data'
             }
         })
-        .then(res => {
-            if (res.data.status === "Success") {
-                console.log("Upload succeeded");
-                setImage(res.data.image);
-                setIsOpen(false);
-            } else {
-                console.error('Error uploading image:', res.data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Upload failed:', error.response?.data || error.message);
-        });
+            .then(res => {
+                if (res.data.status === "Success") {
+                    console.log("Upload succeeded");
+                    setImage(res.data.image);
+                    setIsOpen(false);
+                } else {
+                    console.error('Error uploading image:', res.data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Upload failed:', error.response?.data || error.message);
+            });
     };
 
     useEffect(() => {
@@ -80,12 +80,12 @@ export default function SidebarOwner() {
                     Authorization: `Bearer ${token}`
                 }
             })
-            .then(res => {
-                if (res.data.length > 0) {
-                    setImage(res.data[0].own_image);
-                }
-            })
-            .catch(err => console.log(err));
+                .then(res => {
+                    if (res.data.length > 0) {
+                        setImage(res.data[0].own_image);
+                    }
+                })
+                .catch(err => console.log(err));
         }
     }, []);
 
@@ -122,11 +122,11 @@ export default function SidebarOwner() {
                             className="rounded-full w-20 h-20 cursor-pointer"
                             onClick={() => setIsImageOpen(true)}
                         />
-                        <CameraIcon 
-                            width={20} 
-                            height={20} 
-                            className='absolute bottom-0 right-0 -mb-1'   
-                            onClick={() => setIsOpen(true)} 
+                        <CameraIcon
+                            width={20}
+                            height={20}
+                            className='absolute bottom-0 right-0 -mb-1'
+                            onClick={() => setIsOpen(true)}
                         />
                     </div>
                     <h1 className="text-xl font-bold ml-2">Dashboard</h1>
@@ -134,51 +134,64 @@ export default function SidebarOwner() {
                 <nav>
                     <ul className="flex flex-col space-y-2">
                         <li>
-                            <Link href="/owner/dashboard"   className={`block py-2 px-4 rounded transition ${
-                                pathname === "/owner/dashboard" ? "bg-blue-600" : "hover:bg-blue-600"
-                            }`}> 🏠 Home</Link>
+                            <Link href="/owner/dashboard" className={`block py-2 px-4 rounded transition ${pathname === "/owner/dashboard" ? "bg-blue-600" : "hover:bg-blue-600"
+                                }`}> 🏠 Home</Link>
                         </li>
                         <li>
-                            <Link href="/owner/dashboard/profile"   className={`block py-2 px-4 rounded transition ${
-                                pathname === "/owner/dashboard/profile" ? "bg-blue-600" : "hover:bg-blue-600"
-                            }`}>👤 Profile</Link>
+                            <Link href="/owner/dashboard/profile" className={`block py-2 px-4 rounded transition ${pathname === "/owner/dashboard/profile" ? "bg-blue-600" : "hover:bg-blue-600"
+                                }`}>👤 Profile</Link>
                         </li>
                         <li>
-                            <Link href="/owner/dashboard/vehicles" className={`block py-2 px-4 rounded transition ${
-                                pathname === "/owner/dashboard/vehicles" ? "bg-blue-600" : "hover:bg-blue-600"
-                            }`}>➕ Add Vehicles</Link>
+                            <Link href="/owner/dashboard/vehicles" className={`block py-2 px-4 rounded transition ${pathname === "/owner/dashboard/vehicles" ? "bg-blue-600" : "hover:bg-blue-600"
+                                }`}>➕ Add Vehicles</Link>
                         </li>
                         <li>
-                        <Link
-                            href="/owner/dashboard/password"
-                            className={`block py-2 px-4 rounded transition ${
-                                pathname === "/owner/dashboard/password" ? "bg-blue-600" : "hover:bg-blue-600"
-                            }`}
-                        >
-                            <span className="font-medium">🔑 Change Password</span>
-                        </Link>
-                    </li>
+                            <Link
+                                href="/owner/dashboard/password"
+                                className={`block py-2 px-4 rounded transition ${pathname === "/owner/dashboard/password" ? "bg-blue-600" : "hover:bg-blue-600"
+                                    }`}
+                            >
+                                <span className="font-medium">🔑 Change Password</span>
+                            </Link>
+                        </li>
                         <li>
-                        <Link
-                            href="/owner/dashboard/vehiclelist"
-                            className={`block py-2 px-4 rounded transition ${
-                                pathname === "/owner/dashboard/vehiclelist" ? "bg-blue-600" : "hover:bg-blue-600"
-                            }`}
-                        >
-                            <span className="font-medium">🚘 vehicles </span>
-                        </Link>
-                    </li>
-                       
+                            <Link
+                                href="/owner/dashboard/vehiclelist"
+                                className={`block py-2 px-4 rounded transition ${pathname === "/owner/dashboard/vehiclelist" ? "bg-blue-600" : "hover:bg-blue-600"
+                                    }`}
+                            >
+                                <span className="font-medium">🚘 Vehicles </span>
+                            </Link>
+                        </li>
+                        <li>
+                            <Link
+                                href="/owner/dashboard/orderdetails"
+                                className={`block py-2 px-4 rounded transition ${pathname === "/owner/dashboard/orderdetails" ? "bg-blue-600" : "hover:bg-blue-600"
+                                    }`}
+                            >
+                                <span className="font-medium">📋 OrderDetails </span>
+                            </Link>
+                        </li>
+                        <li>
+                            <Link
+                                href="/owner/dashboard/earning"
+                                className={`block py-2 px-4 rounded transition ${pathname === "/owner/dashboard/earning" ? "bg-blue-600" : "hover:bg-blue-600"
+                                    }`}
+                            >
+                                <span className="font-medium">💵 Earnings </span>
+                            </Link>
+                        </li>
+
                     </ul>
                 </nav>
                 <div className="mt-auto">
-        <button
-            onClick={handleLogout}
-            className="block w-full text-left p-2 hover:bg-gray-700 rounded bg-red-500 text-white"
-        >
-            🚪 Logout
-        </button>
-    </div>
+                    <button
+                        onClick={handleLogout}
+                        className="block w-full text-left p-2 hover:bg-gray-700 rounded bg-red-500 text-white"
+                    >
+                        🚪 Logout
+                    </button>
+                </div>
 
                 {/* Image upload dialog */}
                 <Dialog open={isOpen} as="div" className="relative z-10 focus:outline-none" onClose={() => setIsOpen(false)}>
@@ -239,7 +252,7 @@ export default function SidebarOwner() {
             >
                 {isSidebarOpen ? <Bars2Icon className="h-6 w-6" /> : <Bars2Icon className="h-6 w-6" />}
             </button>
-            
+
         </div>
     );
 }
