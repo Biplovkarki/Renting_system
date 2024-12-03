@@ -141,7 +141,7 @@ khaliRoutes.post('/complete-khali-payment', async (req, res) => {
         [
           paymentDetails.transaction_id,
           'paid',
-          'completed', 
+          'approval_pending', 
           'khalti', 
           moment().format('YYYY-MM-DD HH:mm:ss'),
           order_id,

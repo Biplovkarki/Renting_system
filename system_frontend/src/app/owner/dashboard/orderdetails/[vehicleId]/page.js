@@ -28,7 +28,7 @@ const OrderDetails = () => {
         const currentTime = Date.now() / 1000; // Current time in seconds
         if (decoded.exp < currentTime) {
           // Token has expired, log the user out
-          localStorage.removeItem("token"); // Clear expired token
+          localStorage.removeItem('token'); // Clear expired token
           setNotification({
             message: "Your session has expired. Please log in again.",
             type: "error",
@@ -42,7 +42,7 @@ const OrderDetails = () => {
           message: "Invalid token. Please log in again.",
           type: "error",
         });
-        localStorage.removeItem("token");
+        localStorage.removeItem('token');
         router.push("/owner/loginOwner");
       }
     } else {
@@ -55,7 +55,7 @@ const OrderDetails = () => {
   useEffect(() => {
     const fetchOrderDetails = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem('token');
 
         // Make an API call to fetch the order details
         const response = await axios.get(

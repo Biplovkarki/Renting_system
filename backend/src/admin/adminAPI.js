@@ -71,6 +71,7 @@ routerAdmin.post('/login', async (req, res) => {
         }
 
         const token = jwt.sign({ id: admin.admin_id, Adminname: admin.ad_name }, JWT_SECRET, { expiresIn: '1h' });
+        console.log(token);
         res.json({ token });
     } catch (error) {
         console.error('Error logging in:', error);

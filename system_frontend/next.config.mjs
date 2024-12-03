@@ -1,6 +1,7 @@
 // next.config.js
 const nextConfig = {
     images: {
+        domains: ['example.com', 'another-example.com'],
         remotePatterns: [
             {
                 protocol: 'https',
@@ -13,5 +14,7 @@ const nextConfig = {
         dangerouslyAllowSVG: true, // Enable rendering of SVG images
     },
 };
+
+  
 
 export default nextConfig;

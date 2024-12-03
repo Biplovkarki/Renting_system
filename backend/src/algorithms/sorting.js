@@ -32,7 +32,7 @@ function quickSort(arr, key, order = 'asc') {
 }
 
 sortRouter.get('/vehicles', async (req, res) => {
-    const { category_id,sortBy, order } = req.query;
+    const { category_id, sortBy, order } = req.query;
     const validSortFields = ['final_price', 'discounted_price', 'cc', 'rating_value', 'availability'];
     const validOrder = ['asc', 'desc'];
 
@@ -46,7 +46,7 @@ sortRouter.get('/vehicles', async (req, res) => {
     }
 
     try {
-        // Build the SQL query with optional category_id filtering
+        // Build the SQL query with optional category_id filtering and approval status
         let query = `
             SELECT
                 v.vehicle_id,
@@ -67,20 +67,23 @@ sortRouter.get('/vehicles', async (req, res) => {
                 vehicle_status AS vs ON v.vehicle_id = vs.vehicle_id
             LEFT JOIN
                 ratings AS r ON v.vehicle_id = r.vehicle_id
-                LEFT JOIN
-    categories AS c ON v.category_id = c.category_id
-          
+            LEFT JOIN
+                categories AS c ON v.category_id = c.category_id
+            WHERE
+               
+                 vs.status = 'approve'
         `;
 
         // Add the category filter if category_id is provided
         if (category_id) {
-            query += ` WHERE v.category_id = ?`;
+            query += ` AND v.category_id = ?`;
         }
+
         query += `
-    GROUP BY
-        v.vehicle_id
-`;
-        
+            GROUP BY
+                v.vehicle_id
+        `;
+
         // Execute the query with the category filter if needed
         const [vehicles] = await db.promise().execute(query, category_id ? [category_id] : []);
 
@@ -93,6 +96,4 @@ sortRouter.get('/vehicles', async (req, res) => {
         res.status(500).json({ error: "An error occurred while fetching and sorting vehicles." });
     }
 });
-
-
 export default sortRouter;

@@ -23,9 +23,7 @@ export default function SidebarAdmin() {
                     <li>
                         <Link href="/admin/dashboard" className="block p-2 hover:bg-gray-700 rounded">Home</Link>
                     </li>
-                    <li>
-                        <Link href="/admin/dashboard/profile" className="block p-2 hover:bg-gray-700 rounded">Profile</Link>
-                    </li>
+                    
                     <li>
                         <Link href="/admin/dashboard/users" className="block p-2 hover:bg-gray-700 rounded">Users</Link>
                     </li>
@@ -46,6 +44,9 @@ export default function SidebarAdmin() {
                     </li>
                     <li>
                         <Link href="/admin/dashboard/discount" className="block p-2 hover:bg-gray-700 rounded">Discounts</Link>
+                    </li>
+                    <li>
+                        <Link href="/admin/dashboard/orders" className="block p-2 hover:bg-gray-700 rounded">Manage Orders</Link>
                     </li>
                 </ul>
             </nav>

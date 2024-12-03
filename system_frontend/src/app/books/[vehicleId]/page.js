@@ -6,7 +6,7 @@ import { Tab } from "@headlessui/react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { jwtDecode } from "jwt-decode";
 import RentalForm from "./input";
-import RatingAndComment from "./rate";
+import RatingAndComment from "../../user/dashboard/rating/rate";
 import AverageRating from "./average";
 import CommentsSection from "./comment";
 

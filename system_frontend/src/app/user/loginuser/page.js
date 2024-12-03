@@ -11,7 +11,7 @@ export default function LoginUser() {
   const router = useRouter();
 
   useEffect(() => {
-    const token = localStorage.getItem("userToken");
+    const token = localStorage.getItem('userToken');
     if (token) {
       router.push("/vehicles"); // Redirect to the vehicles page if logged in
     }

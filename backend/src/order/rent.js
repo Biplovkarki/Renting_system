@@ -212,7 +212,7 @@ routerRent.patch("/cod/:order_id", verifyUserJwt, async (req, res) => {
     // Update the order to reflect COD status
     await db.promise().query(
       `UPDATE orders
-       SET status = 'completed', paid_status = 'pending', delivered_status='not_delivered', transaction_uuid = 'N/A',payment_method = 'COD'
+       SET status = 'approval_pending', paid_status = 'pending', delivered_status='not_delivered', transaction_uuid = 'N/A',payment_method = 'COD'
        WHERE order_id = ?`,
       [order_id]
     );

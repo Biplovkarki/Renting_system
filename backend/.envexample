@@ -11,3 +11,4 @@ KHALTI_SECRET_KEY=dc01ef22462e41498b8e25ab5e4af914
 WEBSITE_URL=http://localhost:3000
 KHALTI_GATEWAY_URL=https://a.khalti.com/api/v2
 BACKEND_URL=http://localhost:5000
+FRONTEND_URL=http://localhost:3000

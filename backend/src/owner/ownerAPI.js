@@ -57,7 +57,7 @@ routerOwner.post('/login', async (req, res) => {
             return res.status(401).json({ message: 'Invalid email or password.' });
         }
 
-        // Create the token with owner ID
+        // Create the token with the correct owner ID field `Owner_id`
         const token = jwt.sign({ id: owner.Owner_id, ownername: owner.ownername }, JWT_SECRET, { expiresIn: '1h' });
         
         res.json({ token });
@@ -66,6 +66,7 @@ routerOwner.post('/login', async (req, res) => {
         res.status(500).json({ message: 'Internal server error.' });
     }
 });
+
 
 // Fetch Owner Profile
 routerOwner.get('/profile', verifyJwt, async (req, res) => {

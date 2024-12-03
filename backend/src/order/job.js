@@ -21,7 +21,7 @@ async function checkAndInsertTransactions() {
 
         // Check if there are no orders found
         if (orders.length === 0) {
-            console.log('No successful orders found.');
+           // console.log('No successful orders found.');
             return;
         }
 
@@ -35,13 +35,17 @@ async function checkAndInsertTransactions() {
 
             if (existingTransaction.length > 0) {
                 // If transaction already exists, skip to the next order
-                console.log(`Transaction already exists for order_id: ${order_id}`);
+               // console.log(`Transaction already exists for order_id: ${order_id}`);
                 continue;
             }
 
             // Calculate earnings (80% for owner, 20% for admin)
-            const owner_earning = grand_total * 0.8; // 80% for owner
-            const admin_earning = grand_total * 0.2; // 20% for admin
+            let owner_earning = grand_total * 0.8; // 80% for owner
+            let admin_earning = grand_total * 0.2; // 20% for admin
+
+            // Round off the earnings to 2 decimal places
+            owner_earning = Math.round(owner_earning * 100) / 100;  // Round to 2 decimal places
+            admin_earning = Math.round(admin_earning * 100) / 100;  // Round to 2 decimal places
 
             // Insert the new transaction into the transactions table
             const insertQuery = `
@@ -49,7 +53,7 @@ async function checkAndInsertTransactions() {
                 VALUES (?, ?, ?, ?, ?, 'due')`;
 
             await db.promise().execute(insertQuery, [owner_id, vehicle_id, order_id, owner_earning, admin_earning]);
-            // console.log(`Transaction inserted for order_id: ${order_id}`);
+            //console.log(`Transaction inserted for order_id: ${order_id}`);
         }
     } catch (error) {
         console.error('Error processing transactions:', error);
@@ -58,6 +62,6 @@ async function checkAndInsertTransactions() {
 
 // Schedule the function to run every 10 seconds
 cron.schedule('*/10 * * * * ', async () => {
-    console.log('Checking and inserting transactions...');
+//console.log('Checking and inserting transactions...');
     await checkAndInsertTransactions();
 });

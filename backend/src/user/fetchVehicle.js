@@ -25,6 +25,7 @@ fetchRoutes.get('/vehicle', async (req, res) => {
                 c.category_name,
                 
                 vs.final_price,
+
                 CASE 
                     WHEN d.is_enabled = 1 THEN vs.final_price * (1 - d.discount_percentage / 100)  -- Apply discount calculation here
                     ELSE vs.final_price 
@@ -33,6 +34,7 @@ fetchRoutes.get('/vehicle', async (req, res) => {
                 vs.availability,
                 vs.rent_start_date,
                 vs.rent_end_date,
+                vs.status,
                 vs.terms
                
             FROM vehicle v
@@ -53,8 +55,9 @@ fetchRoutes.get('/vehicle', async (req, res) => {
         if (rows.length === 0) {
             return res.status(204).json({ message: 'No approved vehicles found for this category.' });
         }
-
+        console.log(rows);
         res.json(rows);
+      
     } catch (error) {
         console.error('Error fetching vehicle data:', error);
         res.status(500).json({ message: 'Internal server error.' });
@@ -124,7 +127,7 @@ fetchRoutes.get('/vehicle/:vehicleId', async (req, res) => {
         
         const [rows] = await db.promise().query(query, [vehicleId]);
 
-        console.log('Database Results:', rows); // Log the result from the database
+       // console.log('Database Results:', rows); // Log the result from the database
 
         if (rows.length === 0) {
             return res.status(404).json({ message: 'Vehicle not found or not approved.' });

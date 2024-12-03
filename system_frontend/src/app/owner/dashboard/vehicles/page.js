@@ -27,7 +27,7 @@ export default function Vehicle() {
                 }
 
                 // Set the owner ID or any other required state from decoded token
-                // setOwnerId(decoded.id); // Uncomment if you have ownerId state
+                 setOwnerId(decoded.id); // Uncomment if you have ownerId state
 
             } catch (error) {
                 console.error('Error decoding token:', error);

@@ -1,216 +1,266 @@
 "use client"
-import React, { useEffect, useState } from "react";
-import { jwtDecode } from "jwt-decode";
+import React, { useEffect, useState, Fragment } from "react";
+import {jwtDecode} from "jwt-decode";
 import { useRouter } from "next/navigation";
-import { Box, Typography, CircularProgress } from '@mui/material';
-import Rating from '@mui/material/Rating';
-import StarIcon from '@mui/icons-material/Star';
-import axios from 'axios';
+import { Box, Typography, CircularProgress } from "@mui/material";
+import Rating from "@mui/material/Rating";
+import StarIcon from "@mui/icons-material/Star";
+import { Dialog, Transition } from '@headlessui/react';
+import axios from "axios";
+import RatingAndComment from "./rate";
 
 const labels = {
-    0.5: 'Useless',
-    1: 'Poor',
-    1.5: 'Poor+',
-    2: 'Ok',
-    2.5: 'Ok+',
-    3: 'Good',
-    3.5: 'Good+',
-    4: 'Excellent',
-    4.5: 'Excellent+',
-    5: 'Excellent'
+  0.5: "Useless",
+  1: "Poor",
+  1.5: "Poor+",
+  2: "Ok",
+  2.5: "Ok+",
+  3: "Good",
+  3.5: "Good+",
+  4: "Excellent",
+  4.5: "Excellent+",
+  5: "Excellent",
 };
 
 function getLabelText(value) {
-    return `${value} Star${value !== 1 ? 's' : ''}, ${labels[value]}`;
+  return `${value} Star${value !== 1 ? "s" : ""}, ${labels[value]}`;
 }
 
-const UpcomingRentalsTable = () => {
-    const [userId, setUserId] = useState(null);
-    const [token, setToken] = useState(null);
-    const [upcomingRentals, setUpcomingRentals] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [ratings, setRatings] = useState({}); // Store ratings by vehicle_id
-    const router = useRouter();
+const PastRentalsTable = () => {
+  const [userId, setUserId] = useState(null);
+  const [token, setToken] = useState(null);
+  const [pastRentals, setPastRentals] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [ratings, setRatings] = useState({});
+  const [selectedVehicle, setSelectedVehicle] = useState(null);
+  const [isOpen, setIsOpen] = useState(false);
+  const [comment, setComment] = useState("");
+  const router = useRouter();
 
-    // Token validation and userId extraction
-    useEffect(() => {
-        const storedToken = localStorage.getItem("userToken");
+  // Token validation and userId extraction
+  useEffect(() => {
+    const storedToken = localStorage.getItem("userToken");
 
-        if (storedToken) {
-            try {
-                const decoded = jwtDecode(storedToken);
-                const currentTime = Date.now() / 1000;
+    if (storedToken) {
+      try {
+        const decoded = jwtDecode(storedToken);
+        const currentTime = Date.now() / 1000;
 
-                if (decoded.exp < currentTime) {
-                    throw new Error("Token expired");
-                }
-
-                setUserId(decoded.id);
-                setToken(storedToken);
-            } catch (err) {
-                console.error("Token validation error:", err);
-                localStorage.removeItem("userToken");
-                setError("Your session has expired. Please log in again.");
-                router.push("/vehicles");
-            }
-        } else {
-            setError("No token found. Please log in.");
-            router.push("/vehicles");
+        if (decoded.exp < currentTime) {
+          throw new Error("Token expired");
         }
-    }, [router]);
 
-    // Fetch upcoming rentals
-    useEffect(() => {
-        const fetchUpcomingRentals = async () => {
-            try {
-                const response = await fetch(`http://localhost:5000/userDetails/upcoming-rental-details/${userId}`, {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                });
+        setUserId(decoded.id);
+        setToken(storedToken);
+      } catch (err) {
+        console.error("Token validation error:", err);
+        localStorage.removeItem("userToken");
+        setError("Your session has expired. Please log in again.");
+        router.push("/vehicles");
+      }
+    } else {
+      setError("No token found. Please log in.");
+      router.push("/vehicles");
+    }
+  }, [router]);
 
-                if (!response.ok) {
-                    throw new Error(await response.text());
-                }
+  // Fetch upcoming rentals
+  useEffect(() => {
+    const fetchUpcomingRentals = async () => {
+      try {
+        const response = await fetch(
+          `http://localhost:5000/userDetails/past-rental-details/${userId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
-                const data = await response.json();
-                setUpcomingRentals(data);
-            } catch (err) {
-                setError(err.message);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        if (userId && token) {
-            fetchUpcomingRentals();
+        if (!response.ok) {
+          throw new Error(await response.text());
         }
-    }, [userId, token]);
 
-    // Fetch existing ratings
-    useEffect(() => {
-        const fetchExistingRatings = async () => {
-            try {
-                const ratingsData = {};
-
-                for (let rental of upcomingRentals) {
-                    const response = await axios.get(
-                        `http://localhost:5000/rating/rate/${userId}/${rental.vehicle_id}`,
-                        { headers: { Authorization: `Bearer ${token}` } }
-                    );
-
-                    if (response.data.rating_value) {
-                        ratingsData[rental.vehicle_id] = response.data.rating_value;
-                    }
-                }
-
-                setRatings(ratingsData);
-            } catch (error) {
-                console.error('Error fetching existing ratings:', error);
-            }
-        };
-
-        if (upcomingRentals.length > 0) {
-            fetchExistingRatings();
-        }
-    }, [userId, token, upcomingRentals]);
-
-    const handleRatingChange = async (event, newValue, vehicleId) => {
-        setLoading(true);
-        try {
-            if (ratings[vehicleId]) {
-                // Update existing rating
-                await axios.put(
-                    `http://localhost:5000/rating/rate/${userId}/${vehicleId}`,
-                    { rating_value: parseFloat(newValue) },
-                    { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } }
-                );
-            } else {
-                // Create new rating
-                await axios.post(
-                    `http://localhost:5000/rating/rate/${userId}/${vehicleId}`,
-                    { rating_value: parseFloat(newValue) },
-                    { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } }
-                );
-            }
-            setRatings((prevRatings) => ({
-                ...prevRatings,
-                [vehicleId]: newValue,
-            }));
-        } catch (error) {
-            console.error('Error submitting rating:', error);
-        } finally {
-            setLoading(false);
-        }
+        const data = await response.json();
+        setPastRentals(data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    if (loading) {
-        return (
-            <div className="flex justify-center items-center h-64 text-lg text-gray-500">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mr-3"></div>
-                Loading upcoming rentals...
-            </div>
-        );
+    if (userId && token) {
+      fetchUpcomingRentals();
     }
+  }, [userId, token]);
 
-    if (error) {
-        return (
-            <div className="bg-red-50 border border-red-200 text-red-800 px-6 py-4 rounded-lg max-w-md mx-auto mt-8 text-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 mx-auto mb-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                {error}
-            </div>
-        );
+  // Fetch existing ratings
+  useEffect(() => {
+    const fetchExistingRatings = async () => {
+      try {
+        const ratingsData = {};
+
+        for (let rental of pastRentals) {
+          const response = await axios.get(
+            `http://localhost:5000/rating/rate/${userId}/${rental.vehicle_id}`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+
+          if (response.data.rating_value) {
+            ratingsData[rental.vehicle_id] = response.data.rating_value;
+          }
+        }
+
+        setRatings(ratingsData);
+      } catch (error) {
+        console.error("Error fetching existing ratings:", error);
+      }
+    };
+
+    if (pastRentals.length > 0) {
+      fetchExistingRatings();
     }
+  }, [userId, token, pastRentals]);
 
-    if (upcomingRentals.length === 0) {
-        return (
-            <div className="bg-gray-50 border border-gray-200 text-gray-800 px-6 py-8 rounded-lg max-w-md mx-auto mt-8 text-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto mb-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-                </svg>
-                No upcoming rentals found.
-            </div>
+  const handleRatingChange = async (event, newValue, vehicleId) => {
+    setLoading(true);
+    try {
+      if (ratings[vehicleId]) {
+        // Update existing rating
+        await axios.put(
+          `http://localhost:5000/rating/rate/${userId}/${vehicleId}`,
+          { rating_value: parseFloat(newValue) },
+          { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } }
         );
+      } else {
+        // Create new rating
+        await axios.post(
+          `http://localhost:5000/rating/rate/${userId}/${vehicleId}`,
+          { rating_value: parseFloat(newValue) },
+          { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } }
+        );
+      }
+      setRatings((prevRatings) => ({
+        ...prevRatings,
+        [vehicleId]: newValue,
+      }));
+    } catch (error) {
+      console.error("Error submitting rating:", error);
+    } finally {
+      setLoading(false);
     }
+  };
 
+  const openModal = (vehicle) => {
+    setSelectedVehicle(vehicle);
+    setIsOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsOpen(false);
+    setSelectedVehicle(null);
+    setComment("");
+  };
+
+ 
+
+
+  if (loading) {
     return (
-        <div className="overflow-x-auto shadow-md sm:rounded-lg">
-            <table className="min-w-full text-sm text-left text-gray-500">
-                <thead className="text-xs text-gray-700 uppercase bg-gray-100">
-                    <tr>
-                        <th className="px-6 py-3">Vehicle</th>
-                        <th className="px-6 py-3">Rental Dates</th>
-                        <th className="px-6 py-3">Rating</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {upcomingRentals.map((rental) => (
-                      <tr key={rental.vehicle_id} className="bg-white border-b hover:bg-gray-50">
-                      <td className="px-6 py-4">{rental.vehicle_name}</td>
-                      <td className="px-6 py-4">
-                          {new Date(rental.rent_start_date).toLocaleDateString()} - {new Date(rental.rent_end_date).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4">
-                          <Rating
-                              name={`rating-${rental.vehicle_id}`}
-                              value={ratings[rental.vehicle_id] || 2.5}
-                              precision={0.5}
-                              onChange={(event, newValue) => handleRatingChange(event, newValue, rental.vehicle_id)}  // Ensure rental.vehicle_id is passed here
-                              icon={<StarIcon fontSize="inherit" />}
-                              emptyIcon={<StarIcon fontSize="inherit" />}
-                              getLabelText={getLabelText}
-                          />
-                      </td>
-                  </tr>
-                  
-                    ))}
-                </tbody>
-            </table>
-        </div>
+      <div className="flex justify-center items-center h-64 text-lg text-gray-500">
+        <CircularProgress />
+        Loading upcoming rentals...
+      </div>
     );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center text-red-600">{error}</div>
+    );
+  }
+
+  return (
+    <div className="overflow-x-auto shadow-md sm:rounded-lg">
+      <table className="min-w-full text-sm text-left text-black ">
+        <thead className="text-xs text-black uppercase bg-gray-100">
+          <tr>
+            <th className="px-6 py-3">Vehicle</th>
+            <th className="px-6 py-3">Rental Dates</th>
+            <th className="px-6 py-3">Rating</th>
+            <th className="px-6 py-3">Comment</th>
+          </tr>
+        </thead>
+        <tbody>
+          {pastRentals.map((rental) => (
+            <tr key={rental.vehicle_id} className="bg-white border-b hover:bg-gray-50">
+              <td className="px-6 py-4"><strong>{rental.vehicle_name}</strong></td>
+              <td className="px-6 py-4"><strong>
+                {new Date(rental.rent_start_date).toLocaleDateString()} -{" "}
+                {new Date(rental.rent_end_date).toLocaleDateString()}</strong>
+              </td>
+              <td className="px-6 py-4">
+                <Rating
+                  name={`rating-${rental.vehicle_id}`}
+                  value={ratings[rental.vehicle_id] || 2.5}
+                  precision={0.5}
+                  onChange={(event, newValue) => handleRatingChange(event, newValue, rental.vehicle_id)}
+                  icon={<StarIcon fontSize="inherit" />}
+                  emptyIcon={<StarIcon fontSize="inherit" />}
+                  getLabelText={getLabelText}
+                />
+              </td>
+              <td className="px-6 py-4">
+                <button
+                  onClick={() => openModal(rental)}
+                  className="text-blue-500 hover:underline"
+                >
+                  Add Comment
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      {/* Modal for adding comment */}
+      <Transition appear show={isOpen} as={Fragment}>
+        <Dialog as="div" className="fixed inset-0 z-10 overflow-y-auto" onClose={closeModal}>
+          <div className="min-h-screen px-4 text-center">
+            <span className="inline-block h-screen align-middle" aria-hidden="true">
+              &#8203;
+            </span>
+            <div className="inline-block w-full max-w-lg p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-lg">
+              <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900">
+                Add Comment for {selectedVehicle?.vehicle_name}
+              </Dialog.Title>
+              <div className="mt-4">
+                    {selectedVehicle && (
+                      <RatingAndComment
+                        vehicleId={selectedVehicle.vehicle_id}
+                        userId={userId}
+                      />
+                    )}
+                  </div>
+
+              <div className="mt-4 flex justify-end">
+                <button
+                  onClick={closeModal}
+                  className="px-4 py-2 text-sm font-medium text-gray-900 bg-gray-200 rounded-md"
+                >close
+                
+                </button>
+                
+              </div>
+            </div>
+          </div>
+        </Dialog>
+      </Transition>
+    </div>
+  );
 };
 
-export default UpcomingRentalsTable;
+export default PastRentalsTable;
+

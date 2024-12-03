@@ -3,10 +3,21 @@
 import Image from "next/image";
 import logo from "../../../../public/logo.png";
 import Link from "next/link";
-import LoginForm from "./Form";
 import FormOwner from "./Form";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+
+
 
 export default function LoginOwner() {
+    const router = useRouter();
+
+    useEffect(() => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        router.push("/owner/loginOwner"); // Redirect to the vehicles page if logged in
+      }
+    }, [router]);
     return (
         <div className="flex flex-col justify-center items-center min-h-screen bg-gray-100"> {/* Added min-h-screen for full height */}
             <div className="flex flex-col items-center border-2 border-gray-300 shadow-lg w-[500px] bg-white p-6 rounded-lg">

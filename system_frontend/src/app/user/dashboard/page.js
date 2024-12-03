@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { jwtDecode } from 'jwt-decode';
+import {jwtDecode} from 'jwt-decode'; // Correct import
 import axios from 'axios';
 import RentalOverview from './rental_status';
 import CurrentRentalDetails from './current-rent';
@@ -24,6 +24,7 @@ export default function Dashboard() {
             try {
                 const decoded = jwtDecode(userToken);
                 const currentTime = Date.now() / 1000;
+
                 if (decoded.exp < currentTime) {
                     localStorage.removeItem('userToken');
                     alert("Your session has expired. Please log in again.");
@@ -35,11 +36,11 @@ export default function Dashboard() {
                     headers: { Authorization: `Bearer ${userToken}` },
                 });
 
-                setUserDetails(response.data); // Store user details
-                setToken(userToken); // Set token state
+                setUserDetails(response.data);
+                setToken(userToken);
             } catch (error) {
                 console.error('Error fetching user details:', error);
-                alert('Unable to fetch user details. Please try again.');
+                alert('Unable to fetch user details. Redirecting to login.');
                 router.push('/vehicles');
             } finally {
                 setIsLoading(false);
@@ -54,46 +55,25 @@ export default function Dashboard() {
     }
 
     return (
-        <div className="flex flex-col items-center justify-start pt-10 text-gray-800 px-6">
-            {userDetails ? (
+        <div className="flex flex-col items-center pt-10 text-gray-800 px-6">
+            {userDetails && (
                 <div className="text-center mb-6">
-                    <h1 className="text-3xl font-semibold mb-2">
-                        Welcome, {userDetails.username}!
-                    </h1>
+                    <h1 className="text-3xl font-semibold mb-2">Welcome, {userDetails.username}!</h1>
                     <p className="text-lg">We're happy to see you again.</p>
                 </div>
-            ) : (
-                <p className="text-xl">User details not available.</p>
             )}
-
-            {/* Left-aligned rental overview and current rental details in the same row */}
-            <div className="w-full flex justify-between gap-6 mt-6">
-                {userDetails ? (
-                    <>
-                        <div className="w-1/2">
-                            <RentalOverview userId={userDetails.User_id} token={token} />
-                        </div>
-                        <div className="w-1/2">
-                            <CurrentRentalDetails userId={userDetails.User_id} token={token} />
-                        </div>
-                        
-                    </>
-                ) : (
-                    <p>Loading rental details...</p>
-                )}
-            </div>
-            <div className="w-full  mt-6">
-                {userDetails ? (
-                    <>
-                        <div className="">
-                            <UpcomingRentalDetails userId={userDetails.User_id} token={token} />
-                        </div>
-                      
-                        
-                    </>
-                ) : (
-                    <p>Loading rental details...</p>
-                )}
+            <div className="w-full flex flex-col gap-6 mt-6">
+                <div className="flex gap-6">
+                    <div className="w-1/2">
+                        <RentalOverview userId={userDetails?.User_id} token={token} />
+                    </div>
+                    <div className="w-1/2">
+                        <CurrentRentalDetails userId={userDetails?.User_id} token={token} />
+                    </div>
+                </div>
+                <div className="w-full">
+                    <UpcomingRentalDetails userId={userDetails?.User_id} token={token} />
+                </div>
             </div>
         </div>
     );

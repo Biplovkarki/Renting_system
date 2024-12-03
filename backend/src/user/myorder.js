@@ -16,7 +16,7 @@ userOrder.get("/:User_id", verifyUserJwt, async (req, res) => {
             return res.status(400).json({ error: "User ID is required." });
         }
 
-        // Query to fetch orders for the user, along with user details
+        // Query to fetch orders for the user with status "completed" or "approval_pending"
         const query = `
             SELECT 
                 o.order_id, 
@@ -47,7 +47,9 @@ userOrder.get("/:User_id", verifyUserJwt, async (req, res) => {
             ON
                 o.User_id = u.User_id
             WHERE 
-                o.User_id = ?;
+                o.User_id = ? 
+            AND 
+                (o.status = 'completed' OR o.status = 'approval_pending');
         `;
 
         // Execute the query
@@ -55,7 +57,7 @@ userOrder.get("/:User_id", verifyUserJwt, async (req, res) => {
 
         // Check if orders exist
         if (rows.length === 0) {
-            return res.status(404).json({ message: "No orders found for this user." });
+            return res.status(404).json({ message: "No orders found for this user with the specified status." });
         }
 
         // Send the orders with user details

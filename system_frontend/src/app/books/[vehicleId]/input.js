@@ -186,8 +186,16 @@ const RentalForm = ({ userId, vehicleId, orderId, onSubmit, onClose }) => {
             headers: { Authorization: `Bearer ${token}` },
           }
         );
-        setMessage(response.data.message);
-        setMessageType("success"); // Set message type to success
+    
+        // Check if the response indicates a successful payment
+        if (response.data.success) {
+          setMessage("Your order is successful! Waiting for approval.");
+          router.push('/vehicles')
+          setMessageType("success"); // Set message type to success
+        } else {
+          setMessage(response.data.message || "Error processing COD payment.");
+          setMessageType("error"); // Set message type to error
+        }
       } catch (error) {
         setMessage(error.response?.data?.message || "Error processing COD payment.");
         setMessageType("error"); // Set message type to error
@@ -203,21 +211,22 @@ const RentalForm = ({ userId, vehicleId, orderId, onSubmit, onClose }) => {
             headers: { Authorization: `Bearer ${token}` },
           }
         );
-
+    
         const khaltiPaymentUrl = response.data.payment_url; // Assume the URL for payment is returned
-
+    
         // Redirect user to Khalti payment gateway (or use Khalti's SDK for modal integration)
         window.location.href = khaltiPaymentUrl;
-
+    
         setMessage("Redirecting to Khalti for payment...");
         setMessageType("success");
-
+    
       } catch (error) {
         setMessage(error.response?.data?.message || "Error processing Khalti payment.");
         setMessageType("error"); // Set message type to error
         console.error("Error during Khalti payment:", error);
       }
     }
+    
   };
 
 

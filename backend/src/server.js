@@ -27,7 +27,11 @@ import userOrder from './user/myorder.js';
 import userDetails from './user/dashboard.js';
 import vehcileUpdate from './owner/update-vehice.js';
 import { detailsForOwner } from './owner/order.js';
+import orderDetailsForOwner from './owner/dashboard.js';
 import '././order/job.js';
+import { vehicledescriptionrouter } from './owner/vehicle-details.js';
+import { ManageOrderRouter } from './admin/manage-order.js';
+
 //import orderRouter from './order/order.js';
 // import vehicleRouter from './owner/vehicle.js';
 
@@ -74,6 +78,9 @@ app.use('/userOrder',userOrder);
 app.use('/userDetails',userDetails);
 app.use('/update',vehcileUpdate);
 app.use('/details',detailsForOwner);
+app.use('/dashboardforowner',orderDetailsForOwner);
+app.use('/vehicledescriptionrouter',vehicledescriptionrouter);
+app.use('/manage-orders',ManageOrderRouter);
 //app.use('/order',orderRouter);
 
 const PORT = process.env.PORT || 5000;
