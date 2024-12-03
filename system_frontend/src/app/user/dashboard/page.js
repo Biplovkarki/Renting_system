@@ -57,9 +57,9 @@ export default function Dashboard() {
     return (
         <div className="flex flex-col items-center pt-10 text-gray-800 px-6">
             {userDetails && (
-                <div className="text-center mb-6">
-                    <h1 className="text-3xl font-semibold mb-2">Welcome, {userDetails.username}!</h1>
-                    <p className="text-lg">We're happy to see you again.</p>
+                  <div className="bg-white shadow-xl rounded-lg p-6 mb-8">
+                  <h1 className="text-3xl font-bold text-center text-gray-800">Welcome to the Dashboard, {userDetails.username}!</h1>
+                  <p className="text-lg text-center text-gray-600 mt-2">We're happy to see you again.</p>
                 </div>
             )}
             <div className="w-full flex flex-col gap-6 mt-6">

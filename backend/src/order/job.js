@@ -61,7 +61,7 @@ async function checkAndInsertTransactions() {
 }
 
 // Schedule the function to run every 10 seconds
-cron.schedule('*/10 * * * * ', async () => {
+cron.schedule('*/10 * * * * *', async () => {
 //console.log('Checking and inserting transactions...');
     await checkAndInsertTransactions();
 });

@@ -187,7 +187,7 @@ export default function SidebarOwner() {
                                 className={`block py-2 px-4 rounded transition ${pathname === "/owner/dashboard/rentdetails" ? "bg-blue-600" : "hover:bg-blue-600"
                                     }`}
                             >
-                                <span className="font-medium">💵 Rent Details </span>
+                                <span className="font-medium">📋 Rent Details </span>
                             </Link>
                         </li>
 

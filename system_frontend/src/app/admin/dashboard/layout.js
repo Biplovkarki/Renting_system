@@ -2,9 +2,7 @@
 import localFont from "next/font/local";
 import "../../globals.css";
 import NavbarOwner from "./navbar";
-import SidebarOwner from "./sidebar";
-import SidebarAdmin from "./sidebar";
-
+import SidebarAdmin from "./sidebar"; // Ensure you only import SidebarAdmin here if it's shared
 
 const geistSans = localFont({
   src: "../../fonts/GeistVF.woff",
@@ -25,20 +23,18 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-         <head>
-                <title>Admin Dashboard</title>
-                {/* Include other head elements like meta tags, links, etc. */}
-            </head>
+      <head>
+        <title>Admin Dashboard</title>
+        {/* Include other head elements like meta tags, links, etc. */}
+      </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <NavbarOwner />
         <div className="flex flex-row"> 
-        <SidebarAdmin/>
-        <main className="flex-grow">
-          {children} {/* Ensure children are placed correctly */}
-        </main>
+          <SidebarAdmin /> {/* This should be rendered here inside body */}
+          <main className="flex-grow">
+            {children} {/* Ensure children are placed correctly */}
+          </main>
         </div>
-        
-        
       </body>
     </html>
   );

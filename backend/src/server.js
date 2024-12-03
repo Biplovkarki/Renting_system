@@ -31,6 +31,10 @@ import orderDetailsForOwner from './owner/dashboard.js';
 import '././order/job.js';
 import { vehicledescriptionrouter } from './owner/vehicle-details.js';
 import { ManageOrderRouter } from './admin/manage-order.js';
+import { ManageUserOrder } from './admin/userdetailsfororder.js';
+import { transactionsRouter } from './admin/transaction.js';
+import counts from './admin/counts.js';
+import ratedetails from './admin/rateandreport.js';
 
 //import orderRouter from './order/order.js';
 // import vehicleRouter from './owner/vehicle.js';
@@ -81,6 +85,10 @@ app.use('/details',detailsForOwner);
 app.use('/dashboardforowner',orderDetailsForOwner);
 app.use('/vehicledescriptionrouter',vehicledescriptionrouter);
 app.use('/manage-orders',ManageOrderRouter);
+app.use('/manage-user-orders',ManageUserOrder);
+app.use('/transactions',transactionsRouter);
+app.use('/counts',counts);
+app.use('/ratedetails',ratedetails);
 //app.use('/order',orderRouter);
 
 const PORT = process.env.PORT || 5000;

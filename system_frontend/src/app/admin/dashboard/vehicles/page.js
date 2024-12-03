@@ -1,8 +1,12 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { PencilIcon, TrashIcon, ClipboardDocumentIcon } from '@heroicons/react/24/outline';
 import { Dialog } from '@headlessui/react';
+import { useRouter } from 'next/navigation';
+import {jwtDecode} from 'jwt-decode';
+
+
 
 const VehicleList = () => {
   const [vehicles, setVehicles] = useState([]);
@@ -12,15 +16,55 @@ const VehicleList = () => {
   const [status, setStatus] = useState('');
   const [availability, setAvailability] = useState(''); // State for availability
   const [loading, setLoading] = useState(true);
-
+  const [totalVehicles, setTotalVehicles] = useState(null);
+  const [error, setError] = useState('');
+  const router = useRouter();
   useEffect(() => {
+    const token = localStorage.getItem('adminToken');
+
+    if (!token) {
+        router.push('/admin/loginAdmin');
+    } else {
+        try {
+            const decoded = jwtDecode(token);
+            const currentTime = Date.now() / 1000; // Current time in seconds
+            if (decoded.exp < currentTime) {
+                localStorage.removeItem('adminToken');
+                alert("Your session has expired. Please log in again.");
+                router.push('/admin/loginAdmin');
+                return;
+            }
+        } catch (error) {
+            console.error('Invalid token:', error);
+            localStorage.removeItem('adminToken');
+            alert("Your session is invalid. Please log in again.");
+            router.push('/admin/loginAdmin');
+        }
+    }
+    const fetchTotalVehicles = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/counts/vehicles', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+  
+        if (!response.ok) {
+          throw new Error('Failed to fetch total vehicles');
+        }
+  
+        const data = await response.json();
+        setTotalVehicles(data.totalVehicles);
+      } catch (err) {
+        setError('Error fetching total vehicles count');
+      }
+    };
+  
+    fetchTotalVehicles();
     const fetchVehicles = async () => {
       const token = localStorage.getItem('adminToken');
-      if (!token) {
-        alert('Please login as an admin');
-        return;
-      }
-
       try {
         const response = await axios.get('http://localhost:5000/vehicleApi/vehicles', {
           headers: { Authorization: `Bearer ${token}` },
@@ -35,7 +79,8 @@ const VehicleList = () => {
     };
 
     fetchVehicles();
-  }, []);
+
+}, [router]);
 
   const openModal = (vehicle) => {
     setSelectedVehicle(vehicle);
@@ -139,7 +184,12 @@ const VehicleList = () => {
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-semibold mb-4">Vehicle List</h1>
+      <span className='flex flex-row items-center justify-between'>
+      <h2 className="text-2xl font-bold mb-4">Vehicle List</h2>
+      {totalVehicles && (
+      <h2 className="text-lg   text-gray-700 mb-2">Total Vehicles: {totalVehicles}</h2>
+        
+        )}</span>
       <table className="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
         <thead className="bg-gray-100">
           <tr>
@@ -171,19 +221,19 @@ const VehicleList = () => {
               <td className="px-4 py-2">{vehicle.discounted_price}</td>
               <td className="px-4 py-2 flex space-x-4">
                 <PencilIcon
-                  className="h-5 w-5 text-blue-500 cursor-pointer"
+                  className="h-5 w-5 text-blue-500 hover:scale-125 cursor-pointer"
                   onClick={() => openEditModal(vehicle)}
                 />
                 <TrashIcon
-                  className="h-5 w-5 text-red-500 cursor-pointer"
+                  className="h-5 w-5 text-red-500 hover:scale-125 cursor-pointer"
                   onClick={() => deleteVehicle(vehicle.vehicle_id)}
                 />
-                <button
-                  className="text-green-500 font-semibold"
+                 < ClipboardDocumentIcon
+                  className="h-5 w-5 text-green-500 hover:scale-125 cursor-pointer"
                   onClick={() => openModal(vehicle)}
-                >
-                  More Info
-                </button>
+                />
+                
+               
               </td>
             </tr>
           ))}
@@ -338,6 +388,7 @@ const VehicleList = () => {
           </button>
         </div>
       </Dialog>
+     
     </div>
   );
 };

@@ -1,7 +1,8 @@
 "use client";
-import React, { useEffect, useState } from 'react';
+import  { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { jwtDecode } from "jwt-decode";
+import AdminDashboardCounts from './details';
 
 export default function Dashboard() {
     const [isLoading, setIsLoading] = useState(true);
@@ -48,6 +49,7 @@ export default function Dashboard() {
         <div>
             <h1>Welcome to the Dashboard, {Adminname}!</h1>
             <p>You are logged in!</p>
+            <AdminDashboardCounts/>
         </div>
     );
 }
