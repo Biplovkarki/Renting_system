@@ -10,7 +10,10 @@ const VehicleEditForm = ({ vehicleId }) => {
         last_renewed: '',
         tax_paid_until: '',
         insurance_expiry: '',
+        rent_start_date:'',
+        rent_end_date:'',
         image_right: null,
+    
         image_left: null,
         image_back: null,
         image_front: null,

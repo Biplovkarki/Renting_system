@@ -20,9 +20,9 @@ const TransactionsTable = () => {
                 if (response.data.success) {
                     setTransactions(response.data.data);
 
-                    // Calculate total admin earning
+                    // Calculate total admin earning as an integer
                     const totalEarning = response.data.data.reduce(
-                        (sum, transaction) => sum + Number(transaction.admin_earning || 0),
+                        (sum, transaction) => sum + Math.round(Number(transaction.admin_earning || 0)),
                         0
                     );
                     setTotalAdminEarning(totalEarning);
@@ -49,7 +49,7 @@ const TransactionsTable = () => {
             <div className="bg-white shadow-md rounded-lg p-6">
                 <p className="text-xl font-medium mb-6">
                     <strong>Total Admin Earning:</strong> 
-                    <span className="text-green-600"> Rs. {totalAdminEarning.toFixed(2)}</span>
+                    <span className="text-green-600"> Rs. {totalAdminEarning}</span>
                 </p>
                 {transactions.length > 0 ? (
                     <div className="overflow-x-auto">
@@ -76,7 +76,7 @@ const TransactionsTable = () => {
                                             {transaction.vehicle_name}
                                         </td>
                                         <td className="border border-gray-200 p-4 text-right text-gray-700">
-                                            Rs. {Number(transaction.admin_earning || 0).toFixed(2)}
+                                            Rs. {Math.round(Number(transaction.admin_earning || 0))}
                                         </td>
                                     </tr>
                                 ))}

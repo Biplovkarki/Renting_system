@@ -48,6 +48,7 @@ const VehicleDetails = () => {
 
   return (
     <div className="overflow-x-auto p-4">
+       <h1 className="text-3xl font-semibold text-gray-800 mb-6">Document Summary</h1>
       <table className="min-w-full table-auto bg-white border border-gray-300 rounded-lg shadow-md">
         <thead className="bg-gray-100">
           <tr>

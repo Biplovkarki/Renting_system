@@ -12,7 +12,8 @@ const OwnerEarningsReport = () => {
     const [notification, setNotification] = useState(null);
     const [totalEarnings, setTotalEarnings] = useState(0); // State to store total earnings
 
-    const router=useRouter();
+    const router = useRouter();
+
     useEffect(() => {
         const token = localStorage.getItem('token');
 
@@ -79,7 +80,7 @@ const OwnerEarningsReport = () => {
             ) : (
                 <div>
                     <div className="text-center mb-6">
-                        <h2 className="text-xl font-semibold">Total Earnings: {totalEarnings.toFixed(2)}</h2>
+                        <h2 className="text-xl font-semibold">Total Earnings: {Math.floor(totalEarnings)}</h2>
                     </div>
 
                     <table className="min-w-full table-auto border-collapse border border-gray-200">
@@ -89,8 +90,6 @@ const OwnerEarningsReport = () => {
                                 <th className="px-4 py-2 border border-gray-200">Image</th>
                                 <th className="px-4 py-2 border border-gray-200">Payment Status</th>
                                 <th className="px-4 py-2 border border-gray-200">Rental Days</th>
-                                <th className="px-4 py-2 border border-gray-200">Rent Start Date</th>
-                                <th className="px-4 py-2 border border-gray-200">Rent End Date</th>
                                 <th className="px-4 py-2 border border-gray-200">Owner Earnings</th>
                                 <th className="px-4 py-2 border border-gray-200">Total Earnings</th>
                             </tr>
@@ -104,13 +103,11 @@ const OwnerEarningsReport = () => {
                                     </td>
                                     <td className="px-4 py-2 border border-gray-200">{row.payment_status}</td>
                                     <td className="px-4 py-2 border border-gray-200">{row.rental_days}</td>
-                                    <td className="px-4 py-2 border border-gray-200">{new Date(row.rent_start_date).toLocaleDateString()}</td>
-                                    <td className="px-4 py-2 border border-gray-200">{new Date(row.rent_end_date).toLocaleDateString()}</td>
                                     <td className="px-4 py-2 border border-gray-200">
-                                        {isNaN(Number(row.owner_earnings)) ? '0.00' : Number(row.owner_earnings).toFixed(2)}
+                                        {isNaN(Number(row.owner_earnings)) ? '0' : Math.floor(Number(row.owner_earnings))}
                                     </td>
                                     <td className="px-4 py-2 border border-gray-200">
-                                        {isNaN(Number(row.owner_earnings)) ? '0.00' : Number(row.owner_earnings).toFixed(2)}
+                                        {isNaN(Number(row.owner_earnings)) ? '0' : Math.floor(Number(row.owner_earnings))}
                                     </td>
                                 </tr>
                             ))}

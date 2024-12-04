@@ -79,7 +79,7 @@ routerRate.get('/rate/:user_id/:vehicle_id', verifyUserJwt, async (req, res) => 
             return res.status(200).json(existingRating[0]); // Return the existing rating value
         }
 
-        return res.status(404).json({ message: 'No rating found for this user and vehicle.' });
+        return res.status(404).json({ message: 'No rating' });
     } catch (error) {
         console.error('Error fetching rating:', error);
         return res.status(500).json({ message: 'Internal server error.' });

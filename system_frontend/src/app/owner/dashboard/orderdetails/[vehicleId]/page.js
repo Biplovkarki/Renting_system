@@ -157,14 +157,14 @@ const OrderDetails = () => {
                 {new Date(order.rent_end_date).toLocaleDateString()}
               </p>
               <p>
-                <span className="font-semibold">Grand Total:</span> ${order.grand_total}
+                <span className="font-semibold">Grand Total:</span> ${Math.round(order.grand_total)}
               </p>
               <p>
                 <span className="font-semibold">Renter Username:</span> {order.username}
               </p>
               <p>
                 <span className="font-semibold">Earnings:</span>{" "}
-                ${Math.round(order.grand_total * 0.8 * 100) / 100}
+                ${Math.round(order.grand_total * 0.8  )}
               </p>
             </div>
             <hr className="border-t border-gray-200" />

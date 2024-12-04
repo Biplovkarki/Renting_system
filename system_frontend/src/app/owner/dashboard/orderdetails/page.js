@@ -86,47 +86,48 @@ const VehicleList = () => {
     return <div className="text-center py-4">Loading vehicles...</div>;
   }
 
-  if (vehicles.length === 0) {
+  // Filter for approved vehicles
+  const approvedVehicles = vehicles.filter(vehicle => vehicle.status === "approve");
+
+  if (approvedVehicles.length === 0) {
     return (
       <div className="text-center py-4">
-        <h1 className="text-lg font-semibold">No vehicles found for this owner.</h1>
+        <h1 className="text-lg font-semibold">No approved vehicles found for this owner.</h1>
       </div>
     );
   }
 
   return (
     <div className="container mx-auto p-4">
-      {vehicles
-        .filter(vehicle => vehicle.status === "approve") // Filter for approved vehicles only
-        .map((vehicle) => (
-          <div
-            key={vehicle.vehicle_id}
-            className="vehicle-item flex gap-6 border-t py-4 cursor-pointer"
-            // Handle the click to view order details
-          >
-            {/* Vehicle Image */}
-            <div className="vehicle-image w-fit">
-              <img
-                src={`http://localhost:5000/${vehicle.image_front}`}
-                alt={`${vehicle.vehicle_name} front`}
-                className="w-32 h-32 rounded-md  aspect-video shadow-md"
-              />
-            </div>
-
-            {/* Vehicle Info */}
-            <div className="vehicle-info w-2/3">
-              <h2 className="text-2xl font-semibold mb-2">{vehicle.vehicle_name},{vehicle.model}</h2>
-              <p className="text-lg"><strong>CC:</strong> {vehicle.cc}</p>
-              <p className="text-lg"><strong>Fuel Type:</strong> {vehicle.fuel_type}</p>
-              <p className="text-lg"><strong>Transmission:</strong> {vehicle.transmission}</p>
-            </div>
-
-            {/* Ellipsis Icon at the rightmost side */}
-            <div className="ml-auto flex items-center">
-              <EllipsisVerticalIcon className="w-10 h-10 text-gray-500 cursor-pointer" onClick={() => viewOrderDetails(vehicle.vehicle_id)} />
-            </div>
+      {approvedVehicles.map((vehicle) => (
+        <div
+          key={vehicle.vehicle_id}
+          className="vehicle-item flex gap-6 border-t py-4 cursor-pointer"
+          // Handle the click to view order details
+        >
+          {/* Vehicle Image */}
+          <div className="vehicle-image w-fit">
+            <img
+              src={`http://localhost:5000/${vehicle.image_front}`}
+              alt={`${vehicle.vehicle_name} front`}
+              className="w-32 h-32 rounded-md aspect-video shadow-md"
+            />
           </div>
-        ))}
+
+          {/* Vehicle Info */}
+          <div className="vehicle-info w-2/3">
+            <h2 className="text-2xl font-semibold mb-2">{vehicle.vehicle_name}, {vehicle.model}</h2>
+            <p className="text-lg"><strong>CC:</strong> {vehicle.cc}</p>
+            <p className="text-lg"><strong>Fuel Type:</strong> {vehicle.fuel_type}</p>
+            <p className="text-lg"><strong>Transmission:</strong> {vehicle.transmission}</p>
+          </div>
+
+          {/* Ellipsis Icon at the rightmost side */}
+          <div className="ml-auto flex items-center">
+            <EllipsisVerticalIcon className="w-10 h-10 text-gray-500 cursor-pointer" onClick={() => viewOrderDetails(vehicle.vehicle_id)} />
+          </div>
+        </div>
+      ))}
     </div>
   );
 };

@@ -8,7 +8,6 @@ export default function Vehicle() {
     const router = useRouter();
     const [notification, setNotification] = useState(null); // State for notifications
     const [formKey, setFormKey] = useState(0); // Key to refresh VehicleForm
-
     useEffect(() => {
         const token = localStorage.getItem('token');
 
@@ -26,8 +25,7 @@ export default function Vehicle() {
                     return;
                 }
 
-                // Set the owner ID or any other required state from decoded token
-                 setOwnerId(decoded.id); // Uncomment if you have ownerId state
+             // Uncomment if you have ownerId state
 
             } catch (error) {
                 console.error('Error decoding token:', error);

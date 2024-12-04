@@ -35,7 +35,8 @@ import { ManageUserOrder } from './admin/userdetailsfororder.js';
 import { transactionsRouter } from './admin/transaction.js';
 import counts from './admin/counts.js';
 import ratedetails from './admin/rateandreport.js';
-
+import salesRoutes from './admin/sales.js';
+import '././order/job2.js';
 //import orderRouter from './order/order.js';
 // import vehicleRouter from './owner/vehicle.js';
 
@@ -89,6 +90,7 @@ app.use('/manage-user-orders',ManageUserOrder);
 app.use('/transactions',transactionsRouter);
 app.use('/counts',counts);
 app.use('/ratedetails',ratedetails);
+app.use('/salesdetails',salesRoutes);
 //app.use('/order',orderRouter);
 
 const PORT = process.env.PORT || 5000;

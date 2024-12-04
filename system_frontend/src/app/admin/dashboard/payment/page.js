@@ -130,8 +130,9 @@ const TransactionsTable = () => {
                                 <td className="border border-gray-300 p-2">{transaction.own_phone}</td>
                                 <td className="border border-gray-300 p-2">{transaction.vehicle_name}</td>
                                 <td className="border border-gray-300 p-2 text-right">
-                                    Rs.{Number(transaction.owner_earning || 0).toFixed(2)}
-                                </td>
+    Rs.{Math.round(Number(transaction.owner_earning || 0))}
+</td>
+
                                 <td className={`border border-gray-300 p-2 text-center ${transaction.payment_status === "due" ? "text-red-500" : "text-green-500"}`}>
                                     {transaction.payment_status}
                                 </td>

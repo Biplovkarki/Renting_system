@@ -42,10 +42,8 @@ routerRent.patch(
     const { rent_start_date, rent_end_date, terms } = req.body;
     const licenseImage = req.file ? req.file.path : null;
 
-    // Ensure terms is a boolean
     const isTermsAccepted = terms === "true" || terms === true;
 
-    // Validation for required fields
     if (!rent_start_date || !rent_end_date || !isTermsAccepted) {
       return res.status(400).json({ message: "All rental details are required." });
     }
@@ -57,7 +55,6 @@ routerRent.patch(
     try {
       await db.promise().beginTransaction();
 
-      // Fetch the current order details
       const [orderDetails] = await db.promise().query(
         `SELECT rent_start_date, rent_end_date, terms, licenseImage, status FROM orders WHERE order_id = ?`,
         [order_id]
@@ -67,33 +64,27 @@ routerRent.patch(
         return res.status(404).json({ message: "Order not found." });
       }
 
-      const { rent_start_date: orderStart, rent_end_date: orderEnd, terms: orderTerms, licenseImage: orderLicense, status } =
-        orderDetails[0];
+      const { status } = orderDetails[0];
 
-      // Check if the order can be updated based on status and existing rental details.
-      if (orderStart && orderEnd && orderTerms && orderLicense && status !== 'draft' && status !== 'payment_pending') {
+      if (status !== "draft" && status !== "payment_pending") {
         return res.status(400).json({
-          message: "Order already has rental details. Cannot update finalized order unless status is 'draft' or 'payment_pending'.",
+          message: "Cannot update finalized order unless status is 'draft' or 'payment_pending'.",
         });
       }
 
-      // Validate rental dates - cannot be in the past
       const currentDate = new Date();
       if (new Date(rent_start_date) < currentDate || new Date(rent_end_date) < currentDate) {
         return res.status(400).json({ message: "Rental dates cannot be in the past." });
       }
 
-      // Calculate rental days
-      const rentalDays =
-        Math.ceil(
-          (new Date(rent_end_date).getTime() - new Date(rent_start_date).getTime()) / (1000 * 60 * 60 * 24)
-        );
+      const rentalDays = Math.ceil(
+        (new Date(rent_end_date) - new Date(rent_start_date)) / (1000 * 60 * 60 * 24)
+      );
 
       if (rentalDays <= 0) {
         return res.status(400).json({ message: "Invalid rental period." });
       }
 
-      // Check if the vehicle is already rented during the requested period
       const [existingOrders] = await db.promise().query(
         `SELECT rent_start_date, rent_end_date, status FROM orders WHERE vehicle_id = ? AND status NOT IN ('canceled', 'expires') AND (
           (rent_start_date BETWEEN ? AND ?) OR 
@@ -112,11 +103,9 @@ routerRent.patch(
         ]
       );
 
-      // Check if the vehicle is already rented during the requested period
       if (existingOrders.length > 0) {
-        // Check if any of the conflicting orders are in 'draft' or 'payment_pending' status
-        const conflictingOrderStatuses = existingOrders.filter(order => 
-          order.status !== 'draft' && order.status !== 'payment_pending'
+        const conflictingOrderStatuses = existingOrders.filter(
+          (order) => order.status !== "draft" && order.status !== "payment_pending"
         );
 
         if (conflictingOrderStatuses.length > 0) {
@@ -127,7 +116,28 @@ routerRent.patch(
         }
       }
 
-      // Fetch vehicle pricing details
+      // Check vehicle_status rent_start_date and rent_end_date
+     // Check if the requested rental period is within an existing period
+const [validPeriods] = await db.promise().query(
+  `SELECT rent_start_date, rent_end_date 
+   FROM vehicle_status 
+   WHERE vehicle_id = ? 
+     AND ? >= rent_start_date 
+     AND ? <= rent_end_date`,
+  [
+    vehicle_id,      // The vehicle being checked
+    rent_start_date, // Requested start date
+    rent_end_date    // Requested end date
+  ]
+);
+
+if (validPeriods.length === 0) {
+  return res.status(400).json({
+    message: "The requested rental dates are not within the available period.",
+  });
+}
+
+
       const [priceDetails] = await db.promise().query(
         `SELECT final_price, discounted_price FROM vehicle_status WHERE vehicle_id = ?`,
         [vehicle_id]
@@ -139,9 +149,8 @@ routerRent.patch(
 
       const { final_price, discounted_price } = priceDetails[0];
 
-      // Check if the discount is enabled
       const [discountDetails] = await db.promise().query(
-        `SELECT is_enabled FROM discounts WHERE category_id = (SELECT category_id FROM vehicle WHERE vehicle_id = ?)` ,
+        `SELECT is_enabled FROM discounts WHERE category_id = (SELECT category_id FROM vehicle WHERE vehicle_id = ?)`,
         [vehicle_id]
       );
 
@@ -149,10 +158,8 @@ routerRent.patch(
 
       const dailyPrice = isDiscountEnabled ? discounted_price : final_price;
 
-      // Calculate the grand total
       const grandTotal = parseFloat((dailyPrice * rentalDays).toFixed(2));
 
-      // Update the orders table with new rental details
       await db.promise().query(
         `UPDATE orders SET rent_start_date = ?, rent_end_date = ?, terms = ?, licenseImage = ?, status = 'payment_pending', rental_days = ?, grand_total = ? WHERE order_id = ?`,
         [rent_start_date, rent_end_date, isTermsAccepted, licenseImage, rentalDays, grandTotal, order_id]
@@ -182,6 +189,7 @@ routerRent.patch(
     }
   }
 );
+
 
 
 

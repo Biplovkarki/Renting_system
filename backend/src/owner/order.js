@@ -30,6 +30,7 @@ detailsForOwner.get('/order-details/:vehicleId', verifyJwt, (req, res) => {
         AND v.owner_id = ? 
         AND o.status = 'completed' 
         AND o.paid_status = 'paid'
+          AND (o.delivered_status = 'delivered' OR o.delivered_status = 'returned')
         ORDER BY o.created_at DESC `;
   
     // Execute the query to get the order details
@@ -52,22 +53,33 @@ detailsForOwner.get('/order-details/:vehicleId', verifyJwt, (req, res) => {
 
     try {
         const query = `
-            SELECT 
-                v.vehicle_name,
-                v.image_front AS image,
-                t.payment_status,
-                SUM(o.rental_days) AS rental_days,
-                o.rent_start_date,
-                o.rent_end_date,
-                SUM(t.owner_earning) AS owner_earnings
-            FROM orders o
-            INNER JOIN vehicle v ON o.vehicle_id = v.vehicle_id
-            INNER JOIN transactions t ON o.order_id = t.order_id
-            WHERE v.owner_id = ? 
-              AND o.paid_status = 'paid'
-              AND o.status = 'completed'
-            GROUP BY v.vehicle_id
-            ORDER BY o.rent_start_date DESC
+      SELECT 
+    v.vehicle_name,
+    v.image_front AS image,
+    t.payment_status,
+    SUM(o.rental_days) AS rental_days,
+    MAX(o.rent_start_date) AS rent_start_date,  -- Latest rent start date for each vehicle
+    MAX(o.rent_end_date) AS rent_end_date,      -- Latest rent end date for each vehicle
+    SUM(
+        CASE 
+            WHEN o.paid_status = 'paid' 
+                AND o.status = 'completed' 
+                AND (o.delivered_status = 'delivered' OR o.delivered_status = 'returned') 
+            THEN t.owner_earning 
+            ELSE 0 
+        END
+    ) AS owner_earnings
+FROM orders o
+INNER JOIN vehicle v ON o.vehicle_id = v.vehicle_id
+INNER JOIN transactions t ON o.order_id = t.order_id
+WHERE v.owner_id = ? 
+    AND o.paid_status = 'paid'
+    AND o.status = 'completed'
+    AND (o.delivered_status = 'delivered' OR o.delivered_status = 'returned')
+GROUP BY v.vehicle_id
+ORDER BY o.rent_start_date DESC;
+
+
         `;
 
         const [results] = await db.promise().execute(query, [ownerId]);

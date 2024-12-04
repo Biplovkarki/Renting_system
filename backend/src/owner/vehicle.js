@@ -49,6 +49,8 @@ vehicleRouter.post('/add-vehicle', verifyJwt, upload.fields([
         insurance_expiry,
         vin_number,
         registration_number,
+        rent_start_date,
+        rent_end_date,
         final_price,
         discount_id,
         terms,
@@ -160,10 +162,12 @@ vehicleRouter.post('/add-vehicle', verifyJwt, upload.fields([
         // Insert data into vehicle_status table including rent start and end dates, status, terms, and default availability
         const statusSql = `
             INSERT INTO vehicle_status 
-            (vehicle_id, price_id, final_price, discounted_price, status, terms, discount_id, availability)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            (vehicle_id, price_id, final_price, discounted_price, rent_start_date,
+        rent_end_date, status, terms, discount_id, availability)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?,?,?)
         `;
-        const statusValues = [vehicle_id, price_id, roundedFinalPrice, discountedPrice, status, terms, discount_id, 1]; // Default availability to 1
+        const statusValues = [vehicle_id, price_id, roundedFinalPrice, discountedPrice, rent_start_date,
+            rent_end_date, status, terms, discount_id, 1]; // Default availability to 1
         await db.promise().query(statusSql, statusValues);
 
         res.status(201).json({ message: 'Vehicle, vehicle document, and vehicle status added successfully' });

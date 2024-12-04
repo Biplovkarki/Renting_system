@@ -217,8 +217,8 @@ const VehicleList = () => {
                   {vehicle.availability === 0 ? 'Unavailable' : 'Available'}
                 </span>
               </td>
-              <td className="px-4 py-2">{vehicle.final_price}</td>
-              <td className="px-4 py-2">{vehicle.discounted_price}</td>
+              <td className="px-5 py-2  w-24">Rs. {Math.round(Number(vehicle.final_price))}</td>
+              <td className="px-7 py-2">Rs. {Math.round(Number(vehicle.discounted_price))}</td>
               <td className="px-4 py-2 flex space-x-4">
                 <PencilIcon
                   className="h-5 w-5 text-blue-500 hover:scale-125 cursor-pointer"
@@ -359,6 +359,7 @@ const VehicleList = () => {
               <option value="pending">Pending</option>
               <option value="approve">Approve</option>
               <option value="reject">Reject</option>
+              <option value="end_rental_date">end rental date</option>
             </select>
           </div>
           <div className="mt-4">

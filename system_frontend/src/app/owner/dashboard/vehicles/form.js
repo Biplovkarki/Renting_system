@@ -22,8 +22,8 @@ const VehicleForm = () => {
         final_price: '',
         discounted_price: '',
         terms: 0,
-        // rent_start_date: '',
-        // rent_end_date: '',
+        rent_start_date: '',
+        rent_end_date: '',
         
     });
 
@@ -40,7 +40,7 @@ const VehicleForm = () => {
     const [errorMessage, setErrorMessage] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
     const [loading, setLoading] = useState(false);
-
+    
     useEffect(() => {
         const fetchCategoriesAndOwnerId = async () => {
             const token = localStorage.getItem('token');
@@ -170,8 +170,8 @@ const VehicleForm = () => {
                 final_price: '',
                 discounted_price: '',
                 terms: 0,
-                // rent_start_date: '',
-                // rent_end_date: '',
+                rent_start_date: '',
+                rent_end_date: '',
                 availability: 1, 
                 discount_id: formData.discount_id,
             });
@@ -387,7 +387,7 @@ const VehicleForm = () => {
                             />
                         </label>
 
-                        {/* <label className="flex flex-col">
+                        <label className="flex flex-col">
                             <span className="font-medium text-gray-700">Rent Start Date</span>
                             <input
                                 type="date"
@@ -409,7 +409,7 @@ const VehicleForm = () => {
                                 className="mt-1 border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 required
                             />
-                        </label> */}
+                        </label>
                     </div>
                 </fieldset>
 

@@ -10,7 +10,6 @@ counts.get('/vehicles', verifyJwtAdmin, async (req, res) => {
         const countQuery = 'SELECT COUNT(vehicle_id) AS totalVehicles FROM vehicle';  // Counting based on vehicle_id
         const result = await db.promise().query(countQuery);
 
-        console.log('Result from database:', result);  // Log the result here for debugging
 
         if (result && result[0] && result[0].length > 0) {
             res.status(200).json({
@@ -104,10 +103,8 @@ counts.get("/expired-documents", async (req, res) => {
           WHERE 
               (tax_paid_until < CURDATE() OR insurance_expiry < CURDATE());
       `;
-      console.log('Executing query for expired documents:', query); // Log query for debugging
       const [result] = await db.promise().query(query);
 
-      console.log('Query result for expired documents:', result); // Log the result
 
       res.status(200).json({
           success: true,
@@ -129,10 +126,8 @@ counts.get("/categories-total", async (req, res) => {
           SELECT COUNT(*) AS total_categories
           FROM categories;
       `;
-      console.log('Executing query for total categories:', query); // Log query for debugging
       const [result] = await db.promise().query(query);
 
-      console.log('Query result for total categories:', result); // Log the result
 
       res.status(200).json({
           success: true,
@@ -155,10 +150,8 @@ counts.get("/status-pending", async (req, res) => {
           FROM vehicle_status
           WHERE status = 'pending';
       `;
-      console.log('Executing query for pending vehicles:', query); // Log query for debugging
       const [result] = await db.promise().query(query);
 
-      console.log('Query result for pending vehicles:', result); // Log the result
 
       res.status(200).json({
           success: true,
@@ -172,5 +165,24 @@ counts.get("/status-pending", async (req, res) => {
       });
   }
 });
+
+counts.get('/vehiclespercategory', (req, res) => {
+    const query = 
+      `SELECT vehicle.category_id, c.category_name, COUNT(*) AS total_vehicles
+FROM vehicle
+JOIN categories c ON vehicle.category_id = c.category_id
+GROUP BY vehicle.category_id, c.category_name;
+`
+    ;
+  
+    db.query(query, (err, results) => {
+      if (err) {
+        return res.status(500).json({ error: 'Database error', message: err.message });
+      }
+  
+      // Respond with the count of vehicles per category
+      res.status(200).json({ vehicles_per_category: results });
+    });
+  }); 
 
 export default counts;

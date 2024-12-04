@@ -255,7 +255,7 @@ ManageOrderRouter.put('/:orderId', verifyJwtAdmin, async (req, res) => {
       }
 
       // Ensure rent_end_date is not before rent_start_date
-      if (newEndDate < newStartDate) {
+      else if (newEndDate < newStartDate) {
         return res.status(400).json({
           success: false,
           message: 'End date cannot be earlier than start date.',

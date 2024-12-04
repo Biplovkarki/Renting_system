@@ -18,12 +18,9 @@ const Dashboard = () => {
                         Authorization: `Bearer ${adminToken}`,
                     },
                 });
-                console.log('API Response:', response.data);  // Log the response to inspect it
 
                 if (response.data.success) {
                     setTotalVehicles(response.data.totalVehicles || 0);
-                } else {
-                    console.error("Failed to fetch vehicle count");
                 }
             } catch (error) {
                 console.error("Error fetching vehicle count:", error);
@@ -32,8 +29,8 @@ const Dashboard = () => {
         fetchVehicleCounts();
     }, []);
 
-    // Fetch delivered vehicle counts
-    useEffect(() => {
+     // Fetch delivered vehicle counts
+     useEffect(() => {
         const fetchDeliveredVehicleCounts = async () => {
             try {
                 const response = await axios.get("http://localhost:5000/counts/deliveredvehicles", {
@@ -112,15 +109,32 @@ const Dashboard = () => {
         fetchPendingVehicleCount();
     }, []);
 
+    // Similar fetch functions for other data...
+
     return (
-        <div>
-            <h1>Admin Dashboard</h1>
-            <div>
-                <p>Total Vehicles: {totalVehicles}</p>
-                <p>Delivered Vehicles: {deliveredVehicles}</p>
-                <p>Expired Documents: {expiredDocuments}</p>
-                <p>Total Categories: {totalCategories}</p>
-                <p>Pending Vehicles: {pendingVehicles}</p>
+        <div className="p-6  bg-gray-100 min-h-fit">
+            <h1 className="text-3xl text-center font-bold text-gray-800 mb-6">Vehicles Dashboard</h1>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                <div className="p-4 bg-white rounded-lg shadow-md">
+                    <h2 className="text-lg font-semibold text-gray-600">Total Vehicles</h2>
+                    <p className="text-2xl font-bold text-blue-600">{totalVehicles}</p>
+                </div>
+                <div className="p-4 bg-white rounded-lg shadow-md">
+                    <h2 className="text-lg font-semibold text-gray-600">Recently Rented</h2>
+                    <p className="text-2xl font-bold text-green-600">{deliveredVehicles}</p>
+                </div>
+                <div className="p-4 bg-white rounded-lg shadow-md">
+                    <h2 className="text-lg font-semibold text-gray-600">Expired Documents</h2>
+                    <p className="text-2xl font-bold text-red-600">{expiredDocuments}</p>
+                </div>
+                <div className="p-4 bg-white rounded-lg shadow-md">
+                    <h2 className="text-lg font-semibold text-gray-600">Total Categories</h2>
+                    <p className="text-2xl font-bold text-yellow-600">{totalCategories}</p>
+                </div>
+                <div className="p-4 bg-white rounded-lg shadow-md">
+                    <h2 className="text-lg font-semibold text-gray-600">Pending Vehicles</h2>
+                    <p className="text-2xl font-bold text-orange-600">{pendingVehicles}</p>
+                </div>
             </div>
         </div>
     );

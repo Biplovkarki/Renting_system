@@ -87,11 +87,11 @@ const UpdateOrderForm = ({ orderId, onClose, onSuccess }) => {
 
     // Validate dates
     const today = new Date().toISOString().split("T")[0]; // Get today's date in 'yyyy-mm-dd'
-    if (formData.rent_start_date < today) {
-      setError("Rent start date cannot be in the past.");
-      setLoading(false);
-      return;
-    }
+    // if (formData.rent_start_date < today) {
+    //   setError("Rent start date cannot be in the past.");
+    //   setLoading(false);
+    //   return;
+    // }
 
     if (formData.rent_end_date <= formData.rent_start_date) {
       setError("Rent end date cannot be earlier than or the same as rent start date.");

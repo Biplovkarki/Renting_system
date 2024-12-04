@@ -23,7 +23,7 @@ AverageRate.get('/average-rating/:vehicle_id', async (req, res) => {
         const averageRating = result[0].average_rating;
 
         if (averageRating === null) {
-            return res.status(404).json({ message: 'No ratings found for this vehicle.' });
+            return res.status(404).json({ message: 'No ratings' });
         }
 
         // Round the average rating to the nearest 0.5

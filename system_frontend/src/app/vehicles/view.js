@@ -279,8 +279,8 @@ const VehicleCard = ({ vehicle, handleCreateOrder, openModal, focusedVehicleId }
                     Price:
                     {vehicle.discounted_price && vehicle.discounted_price < vehicle.final_price ? (
                         <>
-                            <span className="line-through mr-2">{formatPrice(vehicle.final_price)}</span>
-                            <span className="text-green-600">{formatPrice(vehicle.discounted_price)}</span>
+                            <span className="line-through mr-2">{Math.round(Number(vehicle.final_price))}</span>
+                            <span className="text-green-600">{Math.round(Number(vehicle.discounted_price))}</span>
                         </>
                     ) : (
                         <span>{formatPrice(vehicle.final_price)}</span>
