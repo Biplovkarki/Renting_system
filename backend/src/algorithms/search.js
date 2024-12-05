@@ -11,54 +11,68 @@ const search = express.Router();
 const buildSearchQuery = (searchText, selectedFilter, category, vehicleId) => {
     const params = [];
     let sql = `
-        SELECT v.*, vd.*, vs.*, d.discount_percentage, 
-               (vs.final_price - (vs.final_price * d.discount_percentage / 100)) AS discounted_price
-        FROM vehicle v
-        LEFT JOIN vehicle_document vd ON v.vehicle_id = vd.vehicle_id
-        LEFT JOIN vehicle_status vs ON v.vehicle_id = vs.vehicle_id
-        LEFT JOIN discounts d ON v.category_id = d.category_id AND d.is_enabled = 1
-    `;
-    let whereClause = "";
+    SELECT v.*, vd.*, vs.*, d.discount_percentage, 
+           (vs.final_price - (vs.final_price * d.discount_percentage / 100)) AS discounted_price,
+           r.rating_value AS ratings
+    FROM vehicle v
+    LEFT JOIN vehicle_document vd ON v.vehicle_id = vd.vehicle_id
+    INNER JOIN vehicle_status vs ON v.vehicle_id = vs.vehicle_id
+    LEFT JOIN discounts d ON v.category_id = d.category_id AND d.is_enabled = 1
+    LEFT JOIN ratings r ON v.vehicle_id = r.vehicle_id
+    WHERE vs.status = 'approve'
+ `;
+    let whereConditions = [];
 
     // Apply Vehicle ID filter
     if (vehicleId) {
-        whereClause += `v.vehicle_id = ?`;
+        whereConditions.push(`v.vehicle_id = ?`);
         params.push(vehicleId);
     }
 
     // Handle searchable fields (vehicle_name, model, color, cc)
     const searchableFields = ["vehicle_name", "model", "color", "cc"];
     if (searchText && selectedFilter && searchableFields.includes(selectedFilter)) {
-        whereClause += whereClause ? " AND " : "";
         // Handle numeric fields (cc, model)
         if (selectedFilter === "cc" || selectedFilter === "model") {
-            whereClause += `${selectedFilter} = ?`;
-            params.push(Number(searchText)); // Ensure it's treated as a number
+            const numValue = parseInt(searchText, 10); // Convert to integer
+            if (isNaN(numValue)) {
+                throw new Error(`Invalid input for ${selectedFilter}. Only integer values are allowed.`);
+            }
+            whereConditions.push(`${selectedFilter} = ?`);
+            params.push(numValue); // Ensure it's treated as an integer
+        }
+        // Handle rating_value as float (allow decimals)
+        else if (selectedFilter === "ratings") {
+            const numValue = parseFloat(searchText); // Convert to float to handle decimals
+            if (isNaN(numValue)) {
+                throw new Error(`Invalid input for ${selectedFilter}. Only numeric values are allowed.`);
+            }
+            whereConditions.push(`CAST(r.rating_value AS DECIMAL(10,2)) = ?`);
+            params.push(numValue); // Ensure it's treated as a number
         } else {
-            whereClause += `${selectedFilter} LIKE ?`;
+            whereConditions.push(`${selectedFilter} LIKE ?`);
             params.push(`%${searchText}%`);
         }
     } else if (searchText) {
         // Default search across multiple fields if no specific filter is chosen
-        whereClause += whereClause ? " AND " : "";
-        whereClause += `(vehicle_name LIKE ? OR model LIKE ? OR color LIKE ? OR cc LIKE ?)`;
+        whereConditions.push(`(vehicle_name LIKE ? OR model LIKE ? OR color LIKE ? OR cc LIKE ?)`); 
         params.push(`%${searchText}%`, `%${searchText}%`, `%${searchText}%`, `%${searchText}%`);
     }
 
     // Filter by category
     if (category && category !== 'all') {
-        whereClause += whereClause ? " AND " : "";
-        whereClause += `v.category_id = ?`;
+        whereConditions.push(`v.category_id = ?`);
         params.push(category);
     }
 
-    // Add WHERE clause to the query
-    if (whereClause.length > 0) {
-        sql += ` WHERE ${whereClause}`;
+    // Add WHERE conditions to the query
+    if (whereConditions.length > 0) {
+        sql += ` AND (${whereConditions.join(' AND ')})`;
     }
 
     return { sql, params };
 };
+
 
 /**
  * Algorithm to fetch vehicle data based on search parameters.
@@ -66,10 +80,16 @@ const buildSearchQuery = (searchText, selectedFilter, category, vehicleId) => {
 const fetchVehicles = async (req, res) => {
     const { searchText, selectedFilter, category, vehicleId } = req.query;
 
-    // Build the search query based on the filters
-    const { sql, params } = buildSearchQuery(searchText, selectedFilter, category, vehicleId);
+    // Validate category
+    if (category && category !== 'all' && isNaN(category)) {
+        return res.status(400).json({ error: 'Invalid category. Category must be a valid number or "all".' });
+    }
 
+    // Build the search query based on the filters
     try {
+        const { sql, params } = buildSearchQuery(searchText, selectedFilter, category, vehicleId);
+
+        // Execute the query
         db.query(sql, params, (err, results) => {
             if (err) {
                 console.error("Database error:", err);
@@ -79,7 +99,7 @@ const fetchVehicles = async (req, res) => {
         });
     } catch (error) {
         console.error("Error executing query:", error);
-        res.status(500).json({ error: 'Internal error', details: error.message });
+        return res.status(400).json({ error: error.message });
     }
 };
 

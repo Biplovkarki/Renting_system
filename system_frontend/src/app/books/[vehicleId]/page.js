@@ -4,6 +4,7 @@ import axios from "axios";
 import { useParams, useRouter } from "next/navigation";
 import { Tab } from "@headlessui/react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { jwtDecode } from "jwt-decode";
 import RentalForm from "./input";
 import RatingAndComment from "../../user/dashboard/rating/rate";
@@ -24,6 +25,7 @@ const VehicleDetailPage = () => {
     const [orderStatus, setOrderStatus] = useState(null);
     const [fetchError, setFetchError] = useState(null);
     const [cancelSuccess, setCancelSuccess] = useState(false);
+
     const params = useParams();
     const vehicleId = params.vehicleId;
     const router = useRouter();
@@ -51,6 +53,7 @@ const VehicleDetailPage = () => {
         };
         fetchUserId();
     }, [router]);
+
 
     useEffect(() => {
         const fetchVehicleDetails = async () => {
@@ -98,9 +101,9 @@ const VehicleDetailPage = () => {
 
     const formatPrice = (price) => {
         if (price === undefined || price === null) return "Not specified";
-        return new Intl.NumberFormat("en-US", {
+        return new Intl.NumberFormat("en-NP", {
             style: "currency",
-            currency: "USD",
+            currency: "NRP",
         }).format(price);
     };
 
@@ -126,7 +129,7 @@ const VehicleDetailPage = () => {
 
             const cancelResponse = await axios.post(
                 `http://localhost:5000/order/cancel`,
-                { order_id: order.order_id, user_id: userId },
+                { order_id: order.order_id, vehicle_id: vehicleId, user_id: userId },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
@@ -146,6 +149,53 @@ const VehicleDetailPage = () => {
             setLoading(false);
         }
     };
+
+
+    const handleback = async () => {
+        if (!order || !order.order_id) {
+            setError("No active order found for this vehicle.");
+            return;
+        }
+
+        const confirmation = window.confirm("Are you sure you want to cancel this order?");
+        if (!confirmation) return;
+
+        setLoading(true);
+        try {
+            const token = localStorage.getItem("userToken");
+            if (!token) {
+                throw new Error("User not authenticated.");
+            }
+
+            if (!['draft', 'payment_pending'].includes(order.status)) {
+                throw new Error(`Cannot cancel order with status "${order.status}".`);
+            }
+
+            const cancelResponse = await axios.post(
+                `http://localhost:5000/order/cancel`,
+                { order_id: order.order_id, vehicle_id: vehicleId, user_id: userId },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            if (cancelResponse.status === 200) {
+                setCancelSuccess(true);
+                setTimeout(() => {
+                    setCancelSuccess(false);
+                    router.push("/vehicles");
+                }, 3000);
+            } else {
+                throw new Error(`Failed to cancel order. Status: ${cancelResponse.status}, message: ${cancelResponse.data?.message || "Unknown error"}`);
+            }
+        } catch (error) {
+            setError(error.message);
+            console.error("Cancel order error:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+
+
     //status check
     useEffect(() => {
         const fetchOrderStatus = async () => {
@@ -255,7 +305,7 @@ const VehicleDetailPage = () => {
 
     const VehicleInfoBadges = ({ vehicle }) => {
         return (
-           
+
             <span className="flex flex-wrap gap-2">
                 <span className="px-3 py-1 h-8 bg-blue-100 text-blue-700 rounded-md">{vehicle.transmission}</span>
                 <span className="px-3 py-1 h-8 bg-green-100 text-green-700 rounded-md">{vehicle.fuel_type}</span>
@@ -274,15 +324,15 @@ const VehicleDetailPage = () => {
                         <p className="text-gray-700 font-semibold">
                             {vehicle.discounted_price && vehicle.final_price && vehicle.discounted_price < vehicle.final_price ? (
                                 <>
-                                    <span className="line-through text-red-600 mr-2">{formatPrice(vehicle.final_price)}</span>
-                                    <span className="text-green-600">{formatPrice(vehicle.discounted_price)}</span>
+                                    <span className="line-through text-red-600 mr-2"> RS.{Math.round(vehicle.final_price)}</span>
+                                    <span className="text-green-600">RS. {Math.round(vehicle.discounted_price)}</span>
                                 </>
                             ) : (
-                                <span className="text-green-600">{formatPrice(vehicle.final_price)}</span>
+                                <span className="text-green-600"> Rs.{Math.round(vehicle.final_price)}</span>
                             )}
                         </p>
                     </div>
-                  
+
 
                 </div>
                 <div>
@@ -291,13 +341,13 @@ const VehicleDetailPage = () => {
                             <div className="font-semibold">Discount:</div>
 
                             <div className="flex items-center gap-2">
-                            <p className="text-gray-700 font-semibold">
-                                <span className="mr-2">{vehicle.discount_percentage ? `${vehicle.discount_percentage}%` : "N/A"}</span>
+                                <p className="text-gray-700 font-semibold">
+                                    <span className="mr-2">{vehicle.discount_percentage ? `${vehicle.discount_percentage}%` : "N/A"}</span>
                                 </p>
-                                </div>
+                            </div>
                         </div>
                     )}
-                    </div>
+                </div>
             </div>
         );
     };
@@ -340,7 +390,12 @@ const VehicleDetailPage = () => {
 
     return (
         <div className="container mx-auto p-6">
+
             <div className="bg-white rounded-lg shadow-lg p-8 flex flex-col lg:flex-row gap-6">
+                <span className="left-0 top-1 cursor-pointer" onClick={handleback}>
+                    <ArrowLeft className="w-10" />
+                </span>
+
                 <div className="w-full lg:w-7/12 relative">
                     <ImageCarousel images={images} currentImageIndex={currentImageIndex} setCurrentImageIndex={setCurrentImageIndex} />
                 </div>
@@ -348,9 +403,9 @@ const VehicleDetailPage = () => {
                     <div className="space-y-4 ">
                         <h2 className="text-3xl font-semibold">{vehicle.vehicle_name}, {vehicle.model}</h2>
                         <div className="flex flex-row h-9 z-0 items-center  gap-2">
-    <VehicleInfoBadges vehicle={vehicle} />
-    <span className="relative -top-1 z-10"><AverageRating vehicleId={vehicleId} /></span>
-</div>
+                            <VehicleInfoBadges vehicle={vehicle} />
+                            <span className="relative -top-1 z-10"><AverageRating vehicleId={vehicleId} /></span>
+                        </div>
 
                         <div className="grid grid-cols-2 gap-4 mt-4">
                             <div className="font-semibold">Engine:</div>
@@ -384,10 +439,10 @@ const VehicleDetailPage = () => {
                 </div>
             </div>
             <div>
-      
-      <RatingAndComment vehicleId={vehicleId} userId={userId} />
-      <CommentsSection vehicleId={vehicleId}/>
-    </div> 
+
+                <RatingAndComment vehicleId={vehicleId} userId={userId} />
+                <CommentsSection vehicleId={vehicleId} />
+            </div>
             {updateSuccess && (
                 <div className="mt-4 bg-green-200 border border-green-400 text-green-700 px-4 py-3 rounded">
                     Order updated successfully!

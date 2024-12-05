@@ -236,7 +236,8 @@ routerRent.patch("/cod/:order_id", verifyUserJwt, async (req, res) => {
     await db.promise().commit();
 
     res.status(200).json({
-      message: "Order updated successfully with COD payment, and vehicle is now available.",
+      success: true,
+      message: "Order updated successfully with COD ",
       order_id,
       status: "completed",
       paid_status: 0,

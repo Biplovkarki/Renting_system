@@ -1,19 +1,16 @@
-// db.js
 import mysql from 'mysql2';
 import dotenv from 'dotenv';
 
-// Load environment variables from the .env file
 dotenv.config();
 
-// Create a single MySQL connection (no connection pool)
+// Explicit connection configuration with checks
 export const db = mysql.createConnection({
-  host: process.env.DB_HOST,        // Load host from .env
-  user: process.env.DB_USER,        // Load username from .env
-  password: process.env.DB_PASSWORD, // Load password from .env
-  database: process.env.DB_NAME     // Load database name from .env
+  host: process.env.DB_HOST || 'localhost',       // Ensure host is correct
+  user: process.env.DB_USER || 'root',           // Ensure user is 'root'
+  password: process.env.DB_PASSWORD || '',       // Handle empty password
+  database: process.env.DB_NAME || 'online_vehicle_renting',  // Ensure DB name is correct
 });
 
-// Connect to the database
 db.connect((err) => {
   if (err) {
     console.error('Error connecting to the database:', err);
@@ -21,5 +18,3 @@ db.connect((err) => {
   }
   console.log('Connected to MySQL database');
 });
-
- 

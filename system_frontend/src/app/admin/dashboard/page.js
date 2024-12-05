@@ -5,6 +5,7 @@ import { jwtDecode } from "jwt-decode";
 import AdminDashboardCounts from './details';
 import SalesDashboard from './sale';
 import VehicleCategoryCountTable from './vehicle-count-category';
+import ForecastComponent from './arima';
 
 export default function Dashboard() {
     const [isLoading, setIsLoading] = useState(true);
@@ -56,6 +57,9 @@ export default function Dashboard() {
 
             {/* Main Content */}
             <main className="p-8 space-y-8">
+            <div className="bg-white p-6 shadow-md rounded-lg">
+                    <ForecastComponent/>
+                </div>
                 <div className="bg-white p-6 shadow-md rounded-lg">
                     <SalesDashboard />
                 </div>

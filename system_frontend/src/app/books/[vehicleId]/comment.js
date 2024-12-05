@@ -60,8 +60,8 @@ const CommentsSection = ({ vehicleId }) => {
                     >
                         {/* User Avatar */}
                         <Avatar
-                            src={comment.user_image || null}
-                            sx={{ bgcolor: comment.user_image ? 'transparent' : '#1976d2', mr: 2 }}
+                            src={`http://localhost:5000/uploads/user/${comment.user_image}` || null}
+                            sx={{ bgcolor: `http://localhost:5000/uploads/user/${comment.user_image}` ? 'transparent' : '#1976d2', mr: 2 }}
                         >
                             {!comment.user_image && comment.user_name.charAt(0).toUpperCase()}
                         </Avatar>

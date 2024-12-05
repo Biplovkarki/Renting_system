@@ -53,6 +53,8 @@ const RentalForm = ({ userId, vehicleId, orderId, onSubmit, onClose }) => {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
+  // const [success, setSuccess] = useState(null);
   const [rentalDays, setRentalDays] = useState(0);
   const [orderStatus, setOrderStatus] = useState(null);
   const [fetchError, setFetchError] = useState(null);
@@ -63,10 +65,10 @@ const RentalForm = ({ userId, vehicleId, orderId, onSubmit, onClose }) => {
   const router = useRouter();
   const token = localStorage.getItem("userToken");
 
-  const formatPrice = (price) => {
-    const numericPrice = parseFloat(price);
-    return !isNaN(numericPrice) ? numericPrice.toFixed(2) : "0.00";
-  };
+  // const formatPrice = (price) => {
+  //   const numericPrice = parseFloat(price);
+  //   return !isNaN(numericPrice) ? numericPrice.toFixed(2) : "0.00";
+  // };
 
   const getPricePerDay = () => {
     if (vehicle) {
@@ -172,62 +174,63 @@ const RentalForm = ({ userId, vehicleId, orderId, onSubmit, onClose }) => {
   }, [rentStartDate, rentEndDate]);
 
   const handlePaymentSelect = async (paymentMethod) => {
-    setSelectedPayment(paymentMethod);
-    console.log(`Selected Payment Method: ${paymentMethod}`);
-    setModalOpen(false); // Close modal after selection
+  setSelectedPayment(paymentMethod);
+  console.log(`Selected Payment Method: ${paymentMethod}`);
+  setModalOpen(false); // Close modal after selection
 
-    if (paymentMethod === "COD") {
-      try {
-        // Handle COD payment (already implemented)
-        const response = await axios.patch(
-          `http://localhost:5000/rent/cod/${orderId}`,
-          {},
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-    
-        // Check if the response indicates a successful payment
-        if (response.data.success) {
-          setMessage("Your order is successful! Waiting for approval.");
-          router.push('/vehicles')
-          setMessageType("success"); // Set message type to success
-        } else {
-          setMessage(response.data.message || "Error processing COD payment.");
-          setMessageType("error"); // Set message type to error
+  if (paymentMethod === "COD") {
+    try {
+      // Handle COD payment (already implemented)
+      const response = await axios.patch(
+        `http://localhost:5000/rent/cod/${orderId}`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
         }
-      } catch (error) {
-        setMessage(error.response?.data?.message || "Error processing COD payment.");
-        setMessageType("error"); // Set message type to error
-        console.error("Error during COD payment:", error);
+      );
+    
+      // Log the response for debugging
+      console.log("COD Response:", response);
+
+      if (response.data.success) {
+        console.log("COD Payment Successful");
+        alert("Your order is successful! Waiting for approval.");
+        setMessageType("success"); // Set message type to success
+        setMessage(response.data.message); // Set success message
+        router.push('/vehicles'); // Navigate after success
+      } else {
+        console.log("COD Payment failed", response.data.message);
+        setMessage(response.data.message || "Error processing COD payment.");
+        setMessageType("error");
       }
-    } else if (paymentMethod === "Khalti") {
-      try {
-        // Example of API call to initiate Khalti payment
-        const response = await axios.post(
-          `http://localhost:5000/khalti/initialize-khali/${orderId}`,
-          { amount: calculateTotalPrice() }, // Send the calculated total price
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-    
-        const khaltiPaymentUrl = response.data.payment_url; // Assume the URL for payment is returned
-    
-        // Redirect user to Khalti payment gateway (or use Khalti's SDK for modal integration)
-        window.location.href = khaltiPaymentUrl;
-    
-        setMessage("Redirecting to Khalti for payment...");
-        setMessageType("success");
-    
-      } catch (error) {
-        setMessage(error.response?.data?.message || "Error processing Khalti payment.");
-        setMessageType("error"); // Set message type to error
-        console.error("Error during Khalti payment:", error);
-      }
+    } catch (error) {
+      console.error("Error during COD payment:", error);
+      setMessage(error.response?.data?.message || "Error processing COD payment.");
+      setMessageType("error");
     }
+  } else if (paymentMethod === "Khalti") {
+    try {
+      const response = await axios.post(
+        `http://localhost:5000/khalti/initialize-khali/${orderId}`,
+        { amount: Math.round(calculateTotalPrice()) },
+
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
     
-  };
+      const khaltiPaymentUrl = response.data.payment_url;
+      window.location.href = khaltiPaymentUrl;
+    
+      setMessage("Redirecting to Khalti for payment...");
+      setMessageType("success");
+    } catch (error) {
+      setMessage(error.response?.data?.message || "Error processing Khalti payment.");
+      setMessageType("error");
+    }
+  }
+};
+
 
 
   return (
@@ -235,6 +238,12 @@ const RentalForm = ({ userId, vehicleId, orderId, onSubmit, onClose }) => {
       <h2 className="text-2xl font-bold text-center mb-4">Rental Form</h2>
       {loading && <p className="text-blue-600">Loading vehicle details...</p>}
       {error && <p className="text-red-600">Error: {error}</p>}
+      {message && (
+  <p className={`text-sm font-medium mt-2 ${messageType === "success" ? "text-green-500" : "text-red-500"}`}>
+    {message}
+  </p>
+)}
+
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700">Rent Start Date:</label>
@@ -272,13 +281,13 @@ const RentalForm = ({ userId, vehicleId, orderId, onSubmit, onClose }) => {
             <p className="text-sm">
               Price per Day: Rs.{" "}
               {vehicle.discounted_price && vehicle.discounted_price < vehicle.final_price
-                ? formatPrice(vehicle.discounted_price)  // Show discounted price
-                : formatPrice(vehicle.final_price)}   
+                ? Math.round(vehicle.discounted_price)  // Show discounted price
+                : Math.round(vehicle.final_price)}   
                 
             </p>
             <p className="text-sm">Total Rental Days: {rentalDays}</p>
-            <p className="text-sm font-bold">Total Amount: Rs. {formatPrice(calculateTotalPrice())}</p>
-          </div>
+            <p className="text-sm font-bold">Total Amount: Rs. {Math.round(calculateTotalPrice())}</p>
+            </div>
         )}
         <div className="flex items-center">
           <input

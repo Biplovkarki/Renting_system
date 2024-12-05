@@ -45,6 +45,16 @@ const VehicleList = () => {
                     axios.get('http://localhost:5000/fetchdetails/vehicle', { params: { categoryId: selectedCategory } }),
                 ]);
                 setCategories(categoriesResult.data);
+                
+                // If there's a focused vehicle, move it to the front of the list
+                if (focusedVehicleId) {
+                    const focusedVehicleIndex = vehiclesResult.data.findIndex(v => v.vehicle_id === focusedVehicleId);
+                    if (focusedVehicleIndex !== -1) {
+                        const focusedVehicle = vehiclesResult.data.splice(focusedVehicleIndex, 1)[0];
+                        vehiclesResult.data.unshift(focusedVehicle);
+                    }
+                }
+                
                 setVehicles(vehiclesResult.data);
             } catch (error) {
                 setError(`Failed to load data: ${error.message}`);
@@ -57,26 +67,37 @@ const VehicleList = () => {
     }, [selectedCategory, focusedVehicleId]);
 
     useEffect(() => {
-        const fetchSortedVehicles = async () => {
+        const fetchVehiclesAndCategories = async () => {
             try {
                 setLoading(true);
-                const response = await axios.get('http://localhost:5000/sort/vehicles', {
-                    params: { category_id: selectedCategory,sortBy, order},
-                });
-                setVehicles(response.data);
+                const [categoriesResult, vehiclesResult] = await Promise.all([
+                    axios.get('http://localhost:5000/fetchdetails/categories'),
+                    axios.get('http://localhost:5000/sort/vehicles', {
+                        params: { category_id: selectedCategory || undefined, sortBy, order },
+                    }),
+                ]);
+                setCategories(categoriesResult.data);
+    
+                // Handle focused vehicle if exists
+                if (focusedVehicleId) {
+                    const focusedVehicleIndex = vehiclesResult.data.findIndex(v => v.vehicle_id === focusedVehicleId);
+                    if (focusedVehicleIndex !== -1) {
+                        const focusedVehicle = vehiclesResult.data.splice(focusedVehicleIndex, 1)[0];
+                        vehiclesResult.data.unshift(focusedVehicle);
+                    }
+                }
+    
+                setVehicles(vehiclesResult.data);
             } catch (error) {
-                setError(`Failed to load sorted vehicles: ${error.message}`);
-                console.error('Error fetching sorted vehicles:', error);
+                setError(`Failed to load data: ${error.message}`);
+                console.error('Error fetching data:', error);
             } finally {
                 setLoading(false);
             }
         };
-        fetchSortedVehicles();
-    }, [ selectedCategory,sortBy, order]);
-    console.log("Fetched vehicles:", vehicles);
-
-    console.log("SortBy:", sortBy, "Order:", order);
-
+        fetchVehiclesAndCategories();
+    }, [selectedCategory, sortBy, order, focusedVehicleId]);
+    
 
     const openModal = (vehicle) => {
         setSelectedVehicle(vehicle);
@@ -89,19 +110,13 @@ const VehicleList = () => {
     };
 
     const handleCreateOrder = async (vehicleId) => {
-        console.log('handleCreateOrder called');
-        console.log('Vehicle ID:', vehicleId);
-    
         try {
             const token = localStorage.getItem('userToken');
             if (!userId) {
                 alert('User not logged in');
                 return;
             }
-    
-            console.log('User ID:', userId);
-    
-            // Send the request to create an order
+
             const response = await axios.post(
                 'http://localhost:5000/order/create',
                 { user_id: userId, vehicle_id: vehicleId },
@@ -111,18 +126,14 @@ const VehicleList = () => {
                     },
                 }
             );
-    
-            console.log("Order created:", response.data);
-    
-            // If order is successfully created, proceed
+
             alert('Your order has been created. You have 5 minutes to complete the rental process.');
             localStorage.setItem('orderId', response.data.order_id);
             localStorage.setItem('orderTimeout', Date.now() + 10 * 60 * 1000);
-    
+
             router.push(`/books/${vehicleId}`);
         } catch (error) {
             if (error.response && error.response.data.message) {
-                // If the backend sends an error message (e.g., missing fields in user profile)
                 alert(`Error: ${error.response.data.message}`);
             } else {
                 console.error('Error creating order:', error);
@@ -130,13 +141,10 @@ const VehicleList = () => {
             }
         }
     };    
-    
 
     const handleVehicleSelect = (vehicleId) => {
         setFocusedVehicleId(vehicleId);
     };
-
-    const formatPrice = (price) => `Rs. ${Math.round(price).toLocaleString()}`;
 
     if (loading) return <div className="text-center text-gray-500">Loading... <span className="animate-spin rounded-full h-8 w-8 border-4 border-t-4 border-gray-500"></span></div>;
     if (error) return <div className="text-center text-red-500">{error}</div>;
@@ -148,16 +156,6 @@ const VehicleList = () => {
         groups[categoryName].push(vehicle);
         return groups;
     }, {});
-
-    const getSortedVehicles = (vehicles) => {
-        let vehiclesCopy = [...vehicles];
-        const focusedIndex = vehiclesCopy.findIndex((v) => v.vehicle_id === focusedVehicleId);
-        if (focusedIndex !== -1) {
-            const [focusedVehicle] = vehiclesCopy.splice(focusedIndex, 1);
-            vehiclesCopy.unshift(focusedVehicle);
-        }
-        return vehiclesCopy;
-    };
 
     return (
         <div>
@@ -210,7 +208,7 @@ const VehicleList = () => {
                             <VehicleCategory
                                 key={categoryName}
                                 categoryName={categoryName}
-                                vehicles={getSortedVehicles(groupedVehicles[categoryName])}
+                                vehicles={groupedVehicles[categoryName]}
                                 handleCreateOrder={handleCreateOrder}
                                 openModal={openModal}
                                 focusedVehicleId={focusedVehicleId}
@@ -218,7 +216,7 @@ const VehicleList = () => {
                         ))
                     ) : (
                         <VehicleCategory
-                            vehicles={getSortedVehicles(vehicles)}
+                            vehicles={vehicles}
                             handleCreateOrder={handleCreateOrder}
                             openModal={openModal}
                             focusedVehicleId={focusedVehicleId}
@@ -230,7 +228,6 @@ const VehicleList = () => {
         </div>
     );
 };
-
 
 
 

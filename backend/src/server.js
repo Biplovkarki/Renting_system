@@ -37,6 +37,7 @@ import counts from './admin/counts.js';
 import ratedetails from './admin/rateandreport.js';
 import salesRoutes from './admin/sales.js';
 import '././order/job2.js';
+import arimaRouter from './algorithms/arima.js';
 //import orderRouter from './order/order.js';
 // import vehicleRouter from './owner/vehicle.js';
 
@@ -91,6 +92,7 @@ app.use('/transactions',transactionsRouter);
 app.use('/counts',counts);
 app.use('/ratedetails',ratedetails);
 app.use('/salesdetails',salesRoutes);
+app.use('/arima',arimaRouter);
 //app.use('/order',orderRouter);
 
 const PORT = process.env.PORT || 5000;

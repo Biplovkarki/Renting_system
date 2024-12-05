@@ -1,7 +1,7 @@
-"use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faFilter, faCar, faTachometerAlt, faPalette, faStar, faSearch } from "@fortawesome/free-solid-svg-icons";
+import { faFilter, faCar, faTachometerAlt, faPalette, faStar, faSearch, faTimes } from "@fortawesome/free-solid-svg-icons";
+import { debounce } from "lodash";
 
 const VehicleSearch = ({ onVehicleSelect }) => {
   const [showFilters, setShowFilters] = useState(false);
@@ -13,7 +13,8 @@ const VehicleSearch = ({ onVehicleSelect }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [categories, setCategories] = useState([]);
-  const [showNoResults, setShowNoResults] = useState(false); // State for showing no results message
+  const [showNoResults, setShowNoResults] = useState(false);
+  const [lastQuery, setLastQuery] = useState(""); // To prevent repeated searches
 
   const filters = [
     { name: "Vehicle Name", icon: faCar },
@@ -44,68 +45,85 @@ const VehicleSearch = ({ onVehicleSelect }) => {
     setSelectedFilter(filter.name.toLowerCase());
     setShowFilters(false);
     setSearchText("");
+    setResults([]);
   };
 
-  const handleSearch = async () => {
-    // If the search bar is empty, clear the results and return early
-    if (!searchText.trim()) {
-      setResults([]);  // Clear previous results
-      setShowNoResults(false);  // Hide "No results found" message if search text is empty
-      return;
-    }
-  
-    setLoading(true);
-    setError(null);
-    setResults([]);  // Clear previous results when starting a new search
-    setShowNoResults(false);  // Hide "No results found" message when starting a search
-  
-    try {
-      const queryParams = new URLSearchParams({
-        searchText,
-        selectedFilter,
-        category: selectedCategory,
-        vehicleId,
-      });
-  
-      const response = await fetch(`http://localhost:5000/search?${queryParams}`);
-      if (!response.ok) {
-        const message = `HTTP error! status: ${response.status}`;
-        throw new Error(message);
+  const handleSearch = useCallback(
+    debounce(async () => {
+      const currentQuery = `${searchText}-${selectedFilter}-${selectedCategory}-${vehicleId}`;
+      if (currentQuery === lastQuery) {
+        return; // Skip the search if it's the same as the last one
       }
-      const data = await response.json();
-      setResults(data);
-      if (data.length === 0) {
-        setShowNoResults(true);  // Show "No results found" if there are no results
+      setLastQuery(currentQuery);
+
+      if (!searchText.trim()) {
+        setResults([]);
+        setShowNoResults(false);
+        return;
       }
-    } catch (error) {
-      setError(error.message);
-      console.error("Error fetching search results:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+
+      setLoading(true);
+      setError(null);  // Reset the error before the new search
+      setResults([]);
+      setShowNoResults(false);
+
+      try {
+        const queryParams = new URLSearchParams({
+          searchText,
+          selectedFilter,
+          category: selectedCategory,
+          vehicleId,
+        });
+
+        const response = await fetch(`http://localhost:5000/search?${queryParams}`);
+
+        if (!response.ok) {
+          if (response.status === 400) {
+            // Custom error handling for invalid numeric input
+            setError("You can only use numbers in this filter.");
+          } else {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          return;
+        }
+
+        const data = await response.json();
+        setResults(data);
+        setShowNoResults(data.length === 0);
+      } catch (error) {
+        setError(`Failed to fetch vehicles: ${error.message}`);
+        console.error("Error fetching search results:", error);
+      } finally {
+        setLoading(false);
+      }
+    }, 500), // 500ms delay before making the search request
+    [searchText, selectedFilter, selectedCategory, vehicleId, lastQuery]
+  );
+
+  useEffect(() => {
+    handleSearch();
+  }, [searchText, selectedFilter, selectedCategory, vehicleId, handleSearch]);
 
   const handleVehicleClick = (vehicleId) => {
     onVehicleSelect(vehicleId);
   };
 
-  // Double-click to hide "No results found" message
   const handleSearchBarDoubleClick = () => {
     setShowNoResults(false);
   };
 
   return (
     <div className="vehicle-search-container max-w-screen-lg mx-auto p-6">
-      {/* Wrapper for Category and Search Bar */}
+      {/* Filters and Search Bar */}
       <div className="flex items-center space-x-4 mb-6">
         {/* Category Dropdown */}
-        <div className="category-filter flex items-center">
+        <div className="category-filter">
           <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
             className="border border-gray-300 p-2 text-sm rounded-md shadow-sm"
           >
-            <option value="">Select</option>
+            <option value="">All Categories</option>
             {categories.map((category) => (
               <option key={category.category_id} value={category.category_id}>
                 {category.category_name}
@@ -114,24 +132,26 @@ const VehicleSearch = ({ onVehicleSelect }) => {
           </select>
         </div>
 
-        {/* Search bar */}
-        <div className="search-bar flex items-center border border-gray-300 rounded-md shadow-sm relative flex-grow">
+        {/* Search Bar */}
+        <div className="flex items-center border border-gray-300 rounded-md shadow-sm flex-grow relative">
           <button
-            className="filter-icon bg-gray-100 text-gray-600 px-4 py-2 rounded-l-md hover:bg-gray-200 transition"
+            className="bg-gray-100 text-gray-600 px-4 py-2 rounded-l-md hover:bg-gray-200"
             onClick={() => setShowFilters(!showFilters)}
           >
-            <FontAwesomeIcon icon={filters.find((filter) => filter.name.toLowerCase() === selectedFilter)?.icon || faFilter} />
+            <FontAwesomeIcon
+              icon={filters.find((filter) => filter.name.toLowerCase() === selectedFilter)?.icon || faFilter}
+            />
           </button>
           <input
             type="text"
             placeholder={`Search by ${selectedFilter}`}
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
-            onDoubleClick={handleSearchBarDoubleClick}  // Double-click to hide "No results found"
+            onDoubleClick={handleSearchBarDoubleClick}
             className="flex-grow p-2 focus:outline-none"
           />
           <button
-            className="search-icon bg-blue-500 text-white py-2 px-4 rounded-r-md hover:bg-blue-600 transition"
+            className="bg-blue-500 text-white py-2 px-4 rounded-r-md hover:bg-blue-600"
             onClick={handleSearch}
           >
             <FontAwesomeIcon icon={faSearch} />
@@ -141,11 +161,17 @@ const VehicleSearch = ({ onVehicleSelect }) => {
 
       {/* Filter Options */}
       {showFilters && (
-        <div className="filter-options absolute bg-white border border-gray-300 rounded-md shadow-lg mt-2 w-full z-10">
+        <div className="absolute bg-white border border-gray-300 rounded-md shadow-lg mt-2 w-full z-10">
+          <button
+            className="absolute top-0 right-0 p-2"
+            onClick={() => setShowFilters(false)}
+          >
+            <FontAwesomeIcon icon={faTimes} />
+          </button>
           {filters.map((filter) => (
             <button
               key={filter.name}
-              className="block w-full text-left px-4 py-2 hover:bg-gray-100 transition"
+              className="block w-full px-4 py-2 text-left hover:bg-gray-100"
               onClick={() => handleFilterSelect(filter)}
             >
               <FontAwesomeIcon icon={filter.icon} className="mr-2" />
@@ -155,17 +181,12 @@ const VehicleSearch = ({ onVehicleSelect }) => {
         </div>
       )}
 
-      <div className="search-results mt-6">
-        {loading && (
-          <div className="flex justify-center items-center h-24">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-4 border-blue-500"></div>
-          </div>
-        )}
+      {/* Search Results */}
+      <div className="mt-6">
+        {loading && <div className="text-center">Loading...</div>}
 
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded">
-            <span>{error}</span>
-          </div>
+          <div className="text-center text-red-600">{error}</div>
         )}
 
         {results.length > 0 ? (
@@ -173,44 +194,32 @@ const VehicleSearch = ({ onVehicleSelect }) => {
             {results.map((vehicle) => (
               <div
                 key={vehicle.vehicle_id}
-                className="bg-white border-b last:border-b-0 border-gray-200 flex items-center w-full h-[70px] cursor-pointer"
+                className="flex items-center border-b last:border-0 p-2 cursor-pointer hover:bg-gray-50"
                 onClick={() => handleVehicleClick(vehicle.vehicle_id)}
               >
-                {/* Image Section */}
-                <div className="w-1/4 h-full p-2">
+                <div className="w-1/4">
                   {vehicle.image_front ? (
                     <img
                       src={`http://localhost:5000/${vehicle.image_front}`}
                       alt={vehicle.vehicle_name}
-                      className="w-full h-full object-contain"
+                      className="w-full h-20 object-cover rounded"
                     />
                   ) : (
-                    <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                      <p className="text-gray-500">No Image</p>
+                    <div className="w-full h-20 bg-gray-200 flex items-center justify-center rounded">
+                      No Image
                     </div>
                   )}
                 </div>
-
-                {/* Details Section */}
-                <div className="w-3/4 p-4 flex justify-between items-center">
-                  <div>
-                    <h3 className="text-lg font-bold text-gray-800">
-                      {vehicle.vehicle_name} <span className="text-sm text-gray-600">({vehicle.model})</span>
-                    </h3>
-                    <div className="text-gray-600 text-sm  mt-1">
-                      <p>CC: {vehicle.cc}</p>
-                      <p>Color: {vehicle.color}</p>
-                    </div>
-                  </div>
+                <div className="ml-4 flex-grow">
+                  <h3 className="text-lg font-bold">{vehicle.vehicle_name}</h3>
+                  <p className="text-sm text-gray-600">CC: {vehicle.cc}, Color: {vehicle.color}</p>
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          !loading && showNoResults && (  // Only show "No results found" if search was triggered
-            <div className="text-center py-8 bg-gray-50 rounded-lg">
-              <p className="text-gray-600">No results found</p>
-            </div>
+          !loading && showNoResults && (
+            <div className="text-center py-6 text-gray-500">No vehicles found matching your criteria.</div>
           )
         )}
       </div>
