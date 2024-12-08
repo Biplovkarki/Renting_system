@@ -31,7 +31,7 @@ export default function Discounts() {
                 return; 
             }
         } catch (error) {
-            console.error('Invalid token:', error); 
+            //console.error('Invalid token:', error); 
             localStorage.removeItem('adminToken'); 
             window.alert("Your session is invalid. Please log in again."); 
             router.push('/admin/loginAdmin'); 

@@ -57,7 +57,7 @@ const RentalCalendar = ({ vehicleId, onClose }) => {
       <div className="p-4 text-red-500">
         Error: {error}
         {onClose && (
-          <button onClick={onClose} className="ml-4 bg-blue-500 text-white px-4 py-2 rounded">
+          <button onClick={onClose} className="ml-4 hover:bg-green-500 bg-blue-500 text-white px-4 py-2 rounded">
             Close
           </button>
         )}

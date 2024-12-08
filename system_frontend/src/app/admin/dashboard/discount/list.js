@@ -25,7 +25,7 @@ export default function DiscountList() {
             setDiscounts(response.data);
             setError("");
         } catch (err) {
-            console.error("Error fetching discounts:", err);
+           // console.error("Error fetching discounts:", err);
             handleError(err);
             setDiscounts([]);
         } finally {
@@ -44,7 +44,7 @@ export default function DiscountList() {
             setCategories(response.data);
             setError("");
         } catch (err) {
-            console.error("Error fetching categories:", err);
+            //console.error("Error fetching categories:", err);
             handleError(err);
             setCategories([]);
         }
@@ -70,7 +70,7 @@ export default function DiscountList() {
             });
             fetchDiscounts();
         } catch (err) {
-            console.error("Error deleting discount:", err);
+         //   console.error("Error deleting discount:", err);
             handleError(err);
         }
     };
@@ -93,7 +93,7 @@ export default function DiscountList() {
             fetchDiscounts();
             closeModal();
         } catch (err) {
-            console.error("Error updating discount:", err);
+           // console.error("Error updating discount:", err);
             handleError(err);
         } finally {
             setIsUpdating(false);

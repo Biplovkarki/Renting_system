@@ -41,7 +41,7 @@ const VehicleCategoryCountTable = () => {
           <tbody>
             {categoryData.map((category) => (
               <tr key={category.category_id} className="hover:bg-gray-100">
-                <td className="px-6 py-4 text-gray-800">{category.category_id}</td>
+                <td className="px-6 py-4 text-gray-800">{category.category_name}</td>
                 <td className="px-6 py-4 text-gray-800">{category.total_vehicles}</td>
               </tr>
             ))}

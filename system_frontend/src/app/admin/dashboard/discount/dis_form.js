@@ -25,7 +25,7 @@ export default function DiscountForm() {
                 });
                 setCategories(response.data);
             } catch (err) {
-                console.error('Error fetching categories:', err);
+              //  console.error('Error fetching categories:', err);
                 setError('Failed to load categories.');
             }
         };
@@ -83,7 +83,7 @@ export default function DiscountForm() {
             setError('');
             setIsModalOpen(false); // Close modal on success
         } catch (error) {
-            console.error('Error adding discount:', error);
+           // console.error('Error adding discount:', error);
             if (error.response && error.response.data) {
                 // Check if the error is due to an existing discount
                 if (error.response.data.message === 'A discount offer for this category already exists.') {

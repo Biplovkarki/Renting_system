@@ -202,7 +202,7 @@ const VehicleSearch = ({ onVehicleSelect }) => {
                     <img
                       src={`http://localhost:5000/${vehicle.image_front}`}
                       alt={vehicle.vehicle_name}
-                      className="w-full h-20 object-cover rounded"
+                      className="w-full h-20 object-contain rounded"
                     />
                   ) : (
                     <div className="w-full h-20 bg-gray-200 flex items-center justify-center rounded">

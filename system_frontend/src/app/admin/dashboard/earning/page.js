@@ -31,7 +31,7 @@ const TransactionsTable = () => {
                 }
             } catch (err) {
                 setError("Error fetching transactions.");
-                console.error(err);
+               // console.error(err);
             } finally {
                 setLoading(false);
             }

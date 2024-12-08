@@ -21,28 +21,28 @@ fetchRoutes.get('/vehicle', async (req, res) => {
                 v.image_left,
                 v.image_back,
                 v.image_front,
-                vd.registration_number	,
+                vd.registration_number,
                 c.category_name,
-                
                 vs.final_price,
 
+                -- Apply discount only if is_enabled is 1
                 CASE 
-                    WHEN d.is_enabled = 1 THEN vs.final_price * (1 - d.discount_percentage / 100)  -- Apply discount calculation here
+                    WHEN d.is_enabled = 1 THEN vs.final_price * (1 - d.discount_percentage / 100)  -- Apply discount
                     ELSE vs.final_price 
                 END AS discounted_price,
+
                 d.discount_percentage,  -- Fetch discount percentage if enabled
                 vs.availability,
                 vs.rent_start_date,
                 vs.rent_end_date,
                 vs.status,
                 vs.terms
-               
             FROM vehicle v
             LEFT JOIN vehicle_status vs ON v.vehicle_id = vs.vehicle_id
             LEFT JOIN vehicle_document vd ON v.vehicle_id = vd.vehicle_id
             LEFT JOIN categories c ON v.category_id = c.category_id
             LEFT JOIN discounts d ON c.category_id = d.category_id  -- Join the discounts table
-            WHERE vs.status = 'approve'
+            WHERE vs.status = 'approve' AND (d.is_enabled = 1 OR d.is_enabled IS NULL)
         `;
 
         // If categoryId is provided in the query parameters, filter by category
@@ -55,7 +55,7 @@ fetchRoutes.get('/vehicle', async (req, res) => {
         if (rows.length === 0) {
             return res.status(204).json({ message: 'No approved vehicles found for this category.' });
         }
-        console.log(rows);
+
         res.json(rows);
       
     } catch (error) {
@@ -63,6 +63,7 @@ fetchRoutes.get('/vehicle', async (req, res) => {
         res.status(500).json({ message: 'Internal server error.' });
     }
 });
+
 
 // Fetch all categories
 fetchRoutes.get('/categories', async (req, res) => {

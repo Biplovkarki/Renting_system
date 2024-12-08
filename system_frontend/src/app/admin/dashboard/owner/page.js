@@ -54,7 +54,7 @@ export default function OwnerList() {
             setUsers(response.data);
         } catch (error) {
             setError("Failed to fetch owners.");
-            console.error("Error fetching owners:", error);
+            // console.error("Error fetching owners:", error);
         } finally {
             setLoading(false);
         }

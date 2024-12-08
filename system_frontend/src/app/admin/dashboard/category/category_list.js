@@ -23,7 +23,7 @@ const CategoryList=()=> {
             setCategories(response.data);
             setError(null);
         } catch (err) {
-            console.error("Error fetching categories:", err);
+          //  console.error("Error fetching categories:", err);
             if (err.response) {
                 setError(`Server error: ${err.response.status} - ${err.response.data.message || 'Unknown error'}`);
             } else if (err.request) {
@@ -45,7 +45,7 @@ const CategoryList=()=> {
             });
             fetchCategories();
         } catch (err) {
-            console.error("Error deleting category:", err);
+            //console.error("Error deleting category:", err);
             setError("Failed to delete category. Please try again.");
         }
     };
@@ -72,7 +72,7 @@ const CategoryList=()=> {
             fetchCategories();
             setShowDialog(false);
         } catch (err) {
-            console.error("Error updating category:", err);
+            //console.error("Error updating category:", err);
             setError("Failed to update category. Please try again.");
         } finally {
             setIsUpdating(false); // Reset loading state

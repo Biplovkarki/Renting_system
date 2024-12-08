@@ -249,7 +249,7 @@ const VehicleCategory = ({ vehicles, handleCreateOrder, openModal, focusedVehicl
     );
 };
 
-const VehicleCard = ({ vehicle, handleCreateOrder, openModal, focusedVehicleId }) => {
+const VehicleCard = ({ vehicles,vehicle, handleCreateOrder, openModal, focusedVehicleId }) => {
     const formatPrice = (price) => `Rs. ${Math.round(price).toLocaleString()}`;
     const focused = vehicle.vehicle_id === focusedVehicleId;
 
@@ -269,19 +269,20 @@ const VehicleCard = ({ vehicle, handleCreateOrder, openModal, focusedVehicleId }
                     {vehicle.transmission}
                 </span>
             </div>
-            <img src={`http://localhost:5000/${vehicle.image_front}`} alt={vehicle.vehicle_name} className="w-full h-48 object-contain rounded-md" />
+            <img src={`http://localhost:5000/${vehicle.image_front}`} alt={vehicle.vehicle_name} className="w-full h-48 object-cover rounded-md" />
             <div className="mt-4">
                 <p className="font-medium text-red-800"><strong>{vehicle.vehicle_name}, {vehicle.model}</strong></p>
                 <p className="text-gray-700 font-semibold">
                     Price:
-                    {vehicle.discounted_price && vehicle.discounted_price < vehicle.final_price ? (
+                    {/* {vehicle.discounted_price && vehicle.discounted_price < vehicle.final_price ? (
                         <>
                             <span className="line-through mr-2">{Math.round(Number(vehicle.final_price))}</span>
                             <span className="text-green-600">{Math.round(Number(vehicle.discounted_price))}</span>
                         </>
                     ) : (
-                        <span>{formatPrice(vehicle.final_price)}</span>
-                    )}
+                        <span>{vehicle.final_price}</span>
+                    )} */}
+                      <span>Rs. {Math.round(vehicle.final_price)}</span>
                 </p>
                 <button
                     onClick={() => handleCreateOrder(vehicle.vehicle_id)}

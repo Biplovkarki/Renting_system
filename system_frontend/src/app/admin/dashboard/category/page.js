@@ -33,7 +33,7 @@ export default function Category() {
                 return; // Prevent further execution
             }
         } catch (error) {
-            console.error('Invalid token:', error); 
+           // console.error('Invalid token:', error); 
             localStorage.removeItem('adminToken'); 
             // Show alert for invalid session
             window.alert("Your session is invalid. Please log in again.");

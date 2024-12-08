@@ -143,13 +143,19 @@ ORDER BY
   
   ratedetails.get('/vehicle-details', (req, res) => {
     const query = `
-      SELECT 
-        v.vehicle_name,
-        v.model,
-        vd.tax_paid_until,
-        vd.insurance_expiry
-      FROM vehicle_document vd
-      JOIN vehicle v ON vd.vehicle_id = v.vehicle_id;
+    SELECT 
+    v.vehicle_name,
+    v.model,
+    vd.tax_paid_until,
+    o.ownername AS owner_name,
+    vd.insurance_expiry
+FROM 
+    vehicle_document vd
+JOIN 
+    vehicle v ON vd.vehicle_id = v.vehicle_id
+JOIN 
+    owners o ON v.owner_id = o.owner_id;
+
     `;
   
     db.query(query, (err, results) => {

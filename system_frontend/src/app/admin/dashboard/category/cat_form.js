@@ -38,7 +38,7 @@ const CategoryForm=({ onCategoryAdded })=> {
                 setMessage({ text: data.message || "An unexpected error occurred.", type: 'error' });
             }
         } catch (error) {
-            console.error('Network Error:', error);
+            //console.error('Network Error:', error);
             setMessage({ text: 'A network error occurred. Please check your connection.', type: 'error' });
         }
     };

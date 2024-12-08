@@ -35,7 +35,7 @@ const TransactionsTable = () => {
             }
             return true;
         } catch (error) {
-            console.error("Invalid token:", error);
+            // console.error("Invalid token:", error);
             localStorage.removeItem("adminToken");
             alert("Your session is invalid. Please log in again.");
             router.push("/admin/loginAdmin");
@@ -61,7 +61,7 @@ const TransactionsTable = () => {
                 }
             } catch (err) {
                 setError("Error fetching transactions.");
-                console.error(err);
+                // console.error(err);
             } finally {
                 setLoading(false);
             }
@@ -97,7 +97,7 @@ const TransactionsTable = () => {
                 })
                 .catch((err) => {
                     alert("Error deleting transaction.");
-                    console.error(err);
+                    // console.error(err);
                 });
         }
     };

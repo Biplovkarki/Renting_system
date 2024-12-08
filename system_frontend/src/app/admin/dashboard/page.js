@@ -58,14 +58,13 @@ export default function Dashboard() {
             {/* Main Content */}
             <main className="p-8 space-y-8">
             <div className="bg-white p-6 shadow-md rounded-lg">
+                    <AdminDashboardCounts />
+                </div>
+            <div className="bg-white p-6 shadow-md rounded-lg">
                     <ForecastComponent/>
                 </div>
                 <div className="bg-white p-6 shadow-md rounded-lg">
                     <SalesDashboard />
-                </div>
-
-                <div className="bg-white p-6 shadow-md rounded-lg">
-                    <AdminDashboardCounts />
                 </div>
 
                 <div className="bg-white p-6  shadow-md rounded-lg">
